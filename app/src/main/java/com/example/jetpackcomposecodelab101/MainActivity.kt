@@ -54,7 +54,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun ShowOnBoardingScreen(onContinueClicked: () -> Unit) {
+    private fun ShowOnBoardingScreen(onContinueClicked: () -> Unit) {
         Surface {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -89,7 +89,17 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun Greeting(name: String) {
+    private fun Greeting(name: String) {
+        Card(
+            backgroundColor = MaterialTheme.colors.primary,
+            modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp)
+        ) {
+            CardContent(name)
+        }
+    }
+
+    @Composable
+    private fun CardContent(name: String) {
         // "remember" is used to guard against recomposition, so the state is not reset.
         val expanded = rememberSaveable { mutableStateOf(false) }
         val extraPadding by animateDpAsState(
