@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">Jetpack Compose Code Lab 101</string>
+    <string name="show_less">Show Less</string>
+    <string name="show_more">Show More</string>
+    <string name="welcome">Welcome to the Basics Code Lab!</string>
+    <string name="continue_text">Continue</string>
+    <string name="hello_text">Hello,</string>
+    <string name="expanded_text">"Composem ipsum color sit lazy, padding theme elit, sed do bouncy. "</string>
 </resources>

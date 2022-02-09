@@ -3,6 +3,7 @@ package com.example.jetpackcomposecodelab101
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
@@ -10,14 +11,17 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -51,19 +55,18 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun ShowOnBoardingScreen(onContinueClicked: () -> Unit) {
-
         Surface {
             Column(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Welcome to the Basics Codelab!")
+                Text(stringResource(R.string.welcome))
                 Button(
                     modifier = Modifier.padding(vertical = 24.dp),
                     onClick = onContinueClicked
                 ) {
-                    Text("Continue")
+                    Text(stringResource(R.string.continue_text))
                 }
             }
         }
@@ -72,9 +75,15 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun ShowGreetings(names: List<String> = List(1000) { "$it" }) {
-        LazyColumn(modifier = Modifier.padding(vertical = 4.dp)) {
-            items(items = names) { name ->
-                Greeting(name = name)
+        Surface(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
+            ) {
+                items(items = names) { name ->
+                    Greeting(name = name)
+                }
             }
         }
     }
@@ -91,34 +100,54 @@ class MainActivity : ComponentActivity() {
             )
         )
         Surface(
-            modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp, horizontal = 8.dp),
             color = MaterialTheme.colors.primary
         ) {
-            Row(modifier = Modifier.padding(4.dp)) {
+            Row(
+                modifier = Modifier
+                    .padding(12.dp)
+                    .animateContentSize(
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow
+                        )
+                    )
+            ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = extraPadding.coerceAtLeast(0.dp))
                         .weight(1f)
                 ) {
-                    Text(text = "Hello,")
+                    Text(text = stringResource(R.string.hello_text))
                     Text(
                         text = "$name!",
                         style = MaterialTheme.typography.h4.copy(
                             fontWeight = FontWeight.ExtraBold
                         )
                     )
+                    if (expanded.value) {
+                        Text(
+                            text = stringResource(R.string.expanded_text).repeat(4),
+                        )
+                    }
                 }
-                OutlinedButton(
-                    modifier = Modifier.align(Alignment.CenterVertically),
-                    onClick = {
-                        expanded.value = !expanded.value
-                        if (expanded.value) {
-//                            viewModel.showMore(this@MainActivity)
+                IconButton(onClick = { expanded.value = !expanded.value }) {
+                    Icon(
+                        imageVector = if (expanded.value) {
+                            Icons.Filled.ExpandLess
+                        } else {
+                            Icons.Filled.ExpandMore
+                        },
+                        contentDescription = if (expanded.value) {
+                            stringResource(R.string.show_less)
+                        } else {
+                            stringResource(R.string.show_more)
                         }
-                    },
-                ) {
-                    Text(if (expanded.value) "Show less" else "Show more")
+
+                    )
                 }
             }
         }
@@ -126,7 +155,7 @@ class MainActivity : ComponentActivity() {
 
     @Preview(
         fontScale = 1.5f,
-        name = "On Boarding",
+        name = "On Boarding Light Mode",
         uiMode = Configuration.UI_MODE_NIGHT_NO,
         showSystemUi = true,
         showBackground = true,
@@ -134,7 +163,23 @@ class MainActivity : ComponentActivity() {
         heightDp = 320
     )
     @Composable
-    fun OnBoardingPreview() {
+    fun OnBoardingLightPreview() {
+        JetpackComposeCodeLab101Theme {
+            ShowOnBoardingScreen(onContinueClicked = {})
+        }
+    }
+
+    @Preview(
+        fontScale = 1.5f,
+        name = "On Boarding Dark Mode",
+        uiMode = Configuration.UI_MODE_NIGHT_YES,
+        showSystemUi = true,
+        showBackground = true,
+        widthDp = 320,
+        heightDp = 320
+    )
+    @Composable
+    fun OnBoardingDarkModePreview() {
         JetpackComposeCodeLab101Theme {
             ShowOnBoardingScreen(onContinueClicked = {})
         }
