@@ -7,6 +7,8 @@ import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import com.example.jetpackcomposecodelab101.AppThemeState
+import com.example.jetpackcomposecodelab101.SystemUiController
 
 enum class ColorPalette {
     Bamboo,
@@ -287,42 +289,22 @@ private val LightWaveColorPalette = lightColors(
     error = Color.Red,
 )
 
-private val DarkColorPalette = darkColors(
-    surface = Blue,
-    onSurface = Navy,
-    primary = Navy,
-    onPrimary = Chartreuse,
-    background = Color.White,
-    onBackground = Color.Black,
-)
-
-private val LightColorPalette = lightColors(
-    surface = Blue,
-    onSurface = Color.White,
-    primary = LightBlue,
-    onPrimary = Navy,
-    background = Color.White,
-    onBackground = Color.Black,
-)
-
 @Composable
 fun JetpackComposeCodeLab101Theme(
+    systemUiController: SystemUiController? = null,
+    appThemeState: AppThemeState? = null,
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-//    val colors = if (darkTheme) {
-//        DarkColorPalette
-//    } else {
-//        LightColorPalette
-//    }
-//
-//    MaterialTheme(
-//        colors = colors,
-//        typography = Typography,
-//        shapes = Shapes,
-//        content = content
-//    )
-    val colors = getAppThemeColors(darkTheme, ColorPalette.Jade)
+    val isDarkTheme = appThemeState?.isDarkTheme ?: darkTheme
+    val colorPalette = appThemeState?.colorPalette ?: ColorPalette.Pebble
+    val colors = getAppThemeColors(isDarkTheme, colorPalette)
+
+    systemUiController?.apply {
+        setStatusBarColor(color = colors.primary, darkIcons = darkTheme)
+        setNavigationBarColor(color = colors.primary, darkIcons = darkTheme)
+        setSystemBarsColor(color = colors.primary, darkIcons = darkTheme)
+    }
 
     MaterialTheme(
         colors = colors,
