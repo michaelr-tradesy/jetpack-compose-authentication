@@ -6,4 +6,20 @@
     <string name="continue_text">Continue</string>
     <string name="hello_text">Hello,</string>
     <string name="expanded_text">"Composem ipsum color sit lazy, padding theme elit, sed do bouncy. "</string>
+    <string name="login_text">Login</string>
+    <string name="forgot_password_text">Forgot Password?</string>
+    <string name="create_account_text">Create a new account</string>
+    <string name="dont_have_an_account">Don\'t have an account?</string>
+    <string name="enter_user_name_text">Enter User Name</string>
+    <string name="user_name_text">User Name</string>
+    <string name="enter_password_text">Enter Password</string>
+    <string name="password_text">Password</string>
+    <string name="password_visible_text">Password Is Visible</string>
+    <string name="password_invisible_text">Password Is Invisible</string>
+    <string name="user_name_invalid_text">The user name is invalid.</string>
+    <string name="password_invalid_text">The password is invalid.</string>
+    <string name="logging_in_text">Logging in...</string>
+    <string name="internal_server_error">Encountered Internal Server Error</string>
+    <string name="dashboard_text">Dashboard</string>
+    <string name="logout_text">Logout</string>
 </resources>

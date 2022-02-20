@@ -1,6 +1,8 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'kotlin-android'
+    id 'kotlin-android-extensions'
 }
 
 android {
@@ -14,6 +16,10 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        // Alternatively: DexOpener's test runner
+//        testInstrumentationRunner "com.example.dexopener.DexOpeningTestRunner"
+
         vectorDrawables {
             useSupportLibrary true
         }
@@ -43,17 +49,30 @@ android {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
         }
     }
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
 }
 
 dependencies {
-
     implementation 'androidx.core:core-ktx:1.7.0'
     implementation "androidx.compose.ui:ui:$compose_version"
     implementation "androidx.compose.material:material:$compose_version"
     implementation "androidx.compose.ui:ui-tooling-preview:$compose_version"
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.4.0'
+//    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.4.0'
+//    implementation "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.5.0-alpha01"
     implementation 'androidx.activity:activity-compose:1.4.0'
     implementation "androidx.compose.material:material-icons-extended:$compose_version"
+    implementation("com.arkivanov.mvikotlin:mvikotlin:$mvi_kotlin_version")
+    implementation("com.arkivanov.mvikotlin:mvikotlin-extensions-coroutines:$mvi_kotlin_version")
+    implementation("com.arkivanov.mvikotlin:mvikotlin-logging:$mvi_kotlin_version")
+    implementation("com.arkivanov.mvikotlin:mvikotlin-main:$mvi_kotlin_version")
+    implementation("com.arkivanov.mvikotlin:mvikotlin-extensions-reaktive:$mvi_kotlin_version")
+    implementation("com.arkivanov.mvikotlin:mvikotlin-timetravel:$mvi_kotlin_version")
+    implementation("com.arkivanov.mvikotlin:keepers:$mvi_kotlin_version")
+    implementation("com.arkivanov.mvikotlin:rx:$mvi_kotlin_version")
+    implementation("com.badoo.reaktive:reaktive:1.1.22")
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.17.0")
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'

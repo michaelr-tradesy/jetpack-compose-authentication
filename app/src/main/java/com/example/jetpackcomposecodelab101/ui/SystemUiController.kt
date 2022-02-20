@@ -1,4 +1,4 @@
-package com.example.jetpackcomposecodelab101
+package com.example.jetpackcomposecodelab101.ui
 
 import android.os.Build
 import android.view.View
