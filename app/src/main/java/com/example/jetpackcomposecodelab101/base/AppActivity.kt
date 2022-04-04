@@ -2,7 +2,6 @@ package com.example.jetpackcomposecodelab101.base
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf

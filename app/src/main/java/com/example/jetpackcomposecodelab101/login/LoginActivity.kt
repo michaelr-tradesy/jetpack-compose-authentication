@@ -65,6 +65,8 @@ import kotlinx.coroutines.flow.FlowCollector
 @ExperimentalStateKeeperApi
 class LoginActivity : DefaultAppActivity() {
 
+    // TODO: There's a type of flow that can survive Process Dev.
+    
     private lateinit var viewModel: LoginViewModel
     private lateinit var controller: LoginController
     private lateinit var coroutineScope: CoroutineScope
@@ -81,10 +83,10 @@ class LoginActivity : DefaultAppActivity() {
 
     @Composable
     override fun MyApp(savedInstanceState: Bundle?) {
-//        val viewModel: LoginViewModel by viewModels { AppViewModelFactory(this) }
+        val viewModel: LoginViewModel by viewModels { AppViewModelFactory(this) }
 
-        val vm = remember { mutableStateOf(DefaultLoginViewModel()) }
-        viewModel = vm.value
+//        val vm = remember { mutableStateOf(DefaultLoginViewModel()) }
+//        viewModel = vm.value
         coroutineScope = rememberCoroutineScope()
         viewModel.focusManager = LocalFocusManager.current
         viewModel.keyboardController = LocalSoftwareKeyboardController.current
@@ -106,7 +108,8 @@ class LoginActivity : DefaultAppActivity() {
             viewModel,
             lifecycle.asMviLifecycle(),
             instanceKeeper,
-            stateKeeper
+            stateKeeper,
+            this
         )
 
         LaunchedEffect(Unit) {

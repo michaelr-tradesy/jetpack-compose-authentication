@@ -22,4 +22,5 @@
     <string name="internal_server_error">Encountered Internal Server Error</string>
     <string name="dashboard_text">Dashboard</string>
     <string name="logout_text">Logout</string>
+    <string name="shared_preferences_name">app_preferences</string>
 </resources>

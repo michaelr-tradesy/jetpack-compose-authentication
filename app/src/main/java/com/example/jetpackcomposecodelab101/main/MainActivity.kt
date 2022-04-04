@@ -1,5 +1,6 @@
 package com.example.jetpackcomposecodelab101.main
 
+import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.compose.animation.animateContentSize
@@ -23,16 +24,26 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
 import com.example.jetpackcomposecodelab101.R
 import com.example.jetpackcomposecodelab101.base.DefaultAppActivity
+import com.example.jetpackcomposecodelab101.datastore.AppDataStore
+import com.example.jetpackcomposecodelab101.datastore.DefaultAppDataStore
 import com.example.jetpackcomposecodelab101.ui.theme.JetpackComposeCodeLab101Theme
 
 
 class MainActivity : DefaultAppActivity() {
 
+    private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+    private lateinit var appDataStore: AppDataStore
+
     @Composable
     override fun MyApp(savedInstanceState: Bundle?) {
         val shouldShowOnBoarding = rememberSaveable { mutableStateOf(true) }
+
+        appDataStore = rememberSaveable { DefaultAppDataStore(dataStore) }
 
         if (shouldShowOnBoarding.value) {
             ShowOnBoardingScreen(onContinueClicked = { shouldShowOnBoarding.value = false })
@@ -59,7 +70,6 @@ class MainActivity : DefaultAppActivity() {
             }
         }
     }
-
 
     @Composable
     private fun ShowGreetings(names: List<String> = List(1000) { "$it" }) {
