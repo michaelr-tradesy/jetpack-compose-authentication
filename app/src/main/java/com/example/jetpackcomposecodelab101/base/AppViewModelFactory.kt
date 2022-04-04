@@ -9,11 +9,9 @@ import androidx.savedstate.SavedStateRegistryOwner
 import com.arkivanov.mvikotlin.keepers.instancekeeper.ExperimentalInstanceKeeperApi
 import com.arkivanov.mvikotlin.keepers.statekeeper.ExperimentalStateKeeperApi
 import com.example.jetpackcomposecodelab101.dashboard.DashboardActivity
-import com.example.jetpackcomposecodelab101.dashboard.DashboardViewModel
 import com.example.jetpackcomposecodelab101.dashboard.DefaultDashboardViewModel
 import com.example.jetpackcomposecodelab101.login.DefaultLoginViewModel
 import com.example.jetpackcomposecodelab101.login.LoginActivity
-import com.example.jetpackcomposecodelab101.login.LoginViewModel
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
@@ -34,10 +32,10 @@ class AppViewModelFactory(
         handle: SavedStateHandle
     ): T {
         val output = when {
-            modelClass.isAssignableFrom(DashboardViewModel::class.java) -> {
+            modelClass.isAssignableFrom(DashboardActivity::class.java) -> {
                 DefaultDashboardViewModel(handle)
             }
-            modelClass.isAssignableFrom(LoginViewModel::class.java) -> {
+            modelClass.isAssignableFrom(LoginActivity::class.java) -> {
                 DefaultLoginViewModel(handle)
             }
             else -> throw Throwable("Class Not Recognized=[$modelClass]")

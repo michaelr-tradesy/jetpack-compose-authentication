@@ -7,29 +7,19 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import com.arkivanov.mvikotlin.core.store.Reducer
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
-import com.arkivanov.mvikotlin.extensions.reaktive.ReaktiveBootstrapper
 import com.arkivanov.mvikotlin.extensions.reaktive.ReaktiveExecutor
 import com.arkivanov.mvikotlin.keepers.statekeeper.ExperimentalStateKeeperApi
 import com.arkivanov.mvikotlin.keepers.statekeeper.StateKeeper
-import com.badoo.reaktive.scheduler.computationScheduler
-import com.badoo.reaktive.scheduler.mainScheduler
-import com.badoo.reaktive.single.observeOn
-import com.badoo.reaktive.single.singleFromFunction
-import com.badoo.reaktive.single.subscribeOn
 import com.example.jetpackcomposecodelab101.ui.AppCoroutineScope
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
 @ExperimentalComposeUiApi
 @ExperimentalStateKeeperApi
 class LoginStoreFactory(
-    private val context: Context,
     private val viewModel: LoginViewModel,
     private val storeFactory: StoreFactory,
-    private val interactor: LoginInteractor,
-    private val coroutineScope: CoroutineScope = AppCoroutineScope(),
+    private val interactor: LoginInteractor = DefaultLoginInteractor(),
+    private val coroutineScope: CoroutineScope = AppCoroutineScope()
 ) {
     private object ReducerImpl : Reducer<LoginStore.State, LoginStore.Result> {
         override fun LoginStore.State.reduce(result: LoginStore.Result): LoginStore.State =
@@ -49,15 +39,11 @@ class LoginStoreFactory(
         override fun executeAction(action: LoginStore.Action, getState: () -> LoginStore.State) {
             when (action) {
                 is LoginStore.Action.Idle -> TODO("Not yet implemented=[$action]")
-                is LoginStore.Action.GoogleCredentialsRequested -> requestGoogleCredentials(action.context)
             }
         }
 
         override fun executeIntent(intent: LoginStore.Intent, getState: () -> LoginStore.State) {
             when (intent) {
-                is LoginStore.Intent.GoogleCredentialsRequested -> requestGoogleCredentials(
-                    intent.context
-                )
                 is LoginStore.Intent.Idle -> TODO("Not yet implemented=[$intent]")
                 is LoginStore.Intent.UserNameProvided -> onUserNameProvided(intent.text)
                 is LoginStore.Intent.PasswordProvided -> onPasswordProvided(intent.text)
@@ -74,10 +60,6 @@ class LoginStoreFactory(
                     intent.password
                 )
             }
-        }
-
-        private fun requestGoogleCredentials(context: Context) {
-            interactor.requestCredentials(context) { result -> dispatch(result) }
         }
 
         private fun onLaunchDashboard(context: Context) {
@@ -176,20 +158,10 @@ class LoginStoreFactory(
         // endregion
     }
 
-    private class BootstrapperImpl(private val context: Context) : ReaktiveBootstrapper<LoginStore.Action>() {
-        override fun invoke() {
-            singleFromFunction { LoginStore.Action.GoogleCredentialsRequested(context) }
-                .subscribeOn(computationScheduler)
-                .observeOn(mainScheduler)
-                .subscribeScoped(onSuccess = ::dispatch)
-        }
-    }
-
     fun create(stateKeeper: StateKeeper<LoginStore.State>?): LoginStore =
         object : LoginStore,
             Store<LoginStore.Intent, LoginStore.State, LoginStore.Label> by storeFactory.create(
                 name = this@LoginStoreFactory::class.java.simpleName,
-                bootstrapper = BootstrapperImpl(context),
                 initialState = LoginStore.State.Idle,
                 executorFactory = { ExecutorImpl(viewModel, interactor, coroutineScope) },
                 reducer = ReducerImpl

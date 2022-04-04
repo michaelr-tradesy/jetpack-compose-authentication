@@ -14,13 +14,11 @@ interface LoginStore :
     // Actions that can be triggered in the background in response to receiving intents
     sealed class Action : JvmSerializable {
         object Idle : Action()
-        data class GoogleCredentialsRequested(var context: Context) : Action()
     }
 
     // The user invokes intents
     sealed class Intent : JvmSerializable {
         object Idle : Intent()
-        data class GoogleCredentialsRequested(val context: Context) : Intent()
         data class LaunchDashboard(var context: Context): Intent()
         object  UserNameProvided : Intent() {
             var text = ""
@@ -85,22 +83,6 @@ interface LoginStore :
                 return this
             }
         }
-        object GoogleCredentialsError: Result()
-        object GoogleCredentialsReceived : Result() {
-            var username = ""
-            var password: String? = ""
-
-            fun values(username: String, password: String?) : Result {
-                this.username = username
-                this.password = password
-                return this
-            }
-        }
-        object GooglePermissionsRequested : Result()
-        object GooglePermissionDenied : Result()
-        object GoogleDownloadLocation : Result()
-        object GoogleCredentialsSaved : Result()
-        object GoogleCredentialsDeleted : Result()
         object FocusOnUserName : Result()
         object UserNameInProgress : Result()
         object CanProvidePassword : Result()
@@ -147,22 +129,6 @@ interface LoginStore :
             }
         }
         data class LaunchDashboard(var context: Context): State()
-        object GoogleCredentialsReceived : State() {
-            var username = ""
-            var password: String? = ""
-
-            fun values(username: String, password: String?) : State {
-                this.username = username
-                this.password = password
-                return this
-            }
-        }
-        object GoogleCredentialsError : State()
-        object GooglePermissionsRequested : State()
-        object GooglePermissionDenied : State()
-        object GoogleDownloadLocation : State()
-        object GoogleCredentialsSaved : State()
-        object GoogleCredentialsDeleted : State()
         object FocusOnUserName : State()
         object UserNameInProgress : State()
         object CanProvidePassword : State()
@@ -213,16 +179,6 @@ interface LoginStore :
                     is Result.Error -> Error.values(input.throwable)
                     is Result.AccessToken -> AccessToken
                     is Result.LaunchDashboard -> LaunchDashboard(input.context)
-                    is Result.GoogleCredentialsDeleted -> GoogleCredentialsDeleted
-                    is Result.GoogleCredentialsReceived -> GoogleCredentialsReceived.values(
-                        input.username,
-                        input.password
-                    )
-                    is Result.GoogleCredentialsSaved -> GoogleCredentialsSaved
-                    is Result.GoogleDownloadLocation -> GoogleDownloadLocation
-                    is Result.GooglePermissionDenied -> GooglePermissionDenied
-                    is Result.GooglePermissionsRequested -> GooglePermissionsRequested
-                    Result.GoogleCredentialsError -> GoogleCredentialsError
                 }
             }
         }

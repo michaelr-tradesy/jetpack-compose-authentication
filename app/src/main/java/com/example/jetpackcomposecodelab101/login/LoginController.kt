@@ -1,6 +1,5 @@
 package com.example.jetpackcomposecodelab101.login
 
-import android.content.Context
 import androidx.compose.ui.ExperimentalComposeUiApi
 import com.arkivanov.mvikotlin.core.binder.Binder
 import com.arkivanov.mvikotlin.core.instancekeeper.getStore
@@ -17,10 +16,7 @@ import com.arkivanov.mvikotlin.keepers.statekeeper.StateKeeper
 import com.arkivanov.mvikotlin.logging.store.LoggingStoreFactory
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
 import com.arkivanov.mvikotlin.timetravel.store.TimeTravelStoreFactory
-import com.example.jetpackcomposecodelab101.DefaultPreferencesAdapter
 import com.example.jetpackcomposecodelab101.base.launchDashboard
-import com.example.jetpackcomposecodelab101.google.DefaultGoogleCredentialsAdapter
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 
 interface LoginController {
@@ -29,7 +25,6 @@ interface LoginController {
     fun emit(intent: LoginStore.Intent)
 }
 
-@ExperimentalCoroutinesApi
 @ExperimentalComposeUiApi
 @ExperimentalStateKeeperApi
 @ExperimentalInstanceKeeperApi
@@ -37,8 +32,7 @@ class DefaultLoginController(
     private val viewModel: LoginViewModel,
     lifecycle: Lifecycle,
     instanceKeeper: InstanceKeeper,
-    private val stateKeeper: StateKeeper<LoginStore.State>?,
-    context: Context
+    private val stateKeeper: StateKeeper<LoginStore.State>?
 ) : LoginController, BaseMviView<LoginView.Model, LoginView.Event>() {
 
     private val store: LoginStore
@@ -55,11 +49,8 @@ class DefaultLoginController(
 
         storeFactoryInstance =
             LoggingStoreFactory(delegate = TimeTravelStoreFactory(fallback = DefaultStoreFactory))
-        val interactor: LoginInteractor = DefaultLoginInteractor(DefaultGoogleCredentialsAdapter(
-            DefaultPreferencesAdapter(context)
-        ))
         val calculatorStore = {
-            LoginStoreFactory(context, viewModel, storeFactoryInstance, interactor).create(stateKeeper)
+            LoginStoreFactory(viewModel, storeFactoryInstance).create(stateKeeper)
         }
         store = instanceKeeper.getStore(calculatorStore)
 
@@ -139,13 +130,6 @@ class DefaultLoginController(
                 viewModel.passwordShowError.value = false
                 viewModel.isLoginEnabled.value = false
             }
-            LoginStore.State.GoogleCredentialsDeleted -> TODO()
-            LoginStore.State.GoogleCredentialsError -> TODO()
-            LoginStore.State.GoogleCredentialsReceived -> TODO()
-            LoginStore.State.GoogleCredentialsSaved -> TODO()
-            LoginStore.State.GoogleDownloadLocation -> TODO()
-            LoginStore.State.GooglePermissionDenied -> TODO()
-            LoginStore.State.GooglePermissionsRequested -> TODO()
         }
         stateFlow.value = state
     }
