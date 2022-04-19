@@ -26,6 +26,7 @@ interface LoginViewModel {
     var password: MutableState<String>
     var isLoginEnabled: MutableState<Boolean>
     var keyboardController : SoftwareKeyboardController?
+    var isBioMetricsEnabled: MutableState<Boolean>
 }
 
 @ExperimentalComposeUiApi
@@ -45,7 +46,8 @@ override var passwordFocusRequester: FocusRequester,
 override var userNameFocusRequester: FocusRequester,
 override var userNameShowError: MutableState<Boolean>,
 override var isUserNameEnabled: MutableState<Boolean>,
-override var isLoginEnabled: MutableState<Boolean>
+override var isLoginEnabled: MutableState<Boolean>,
+override var isBioMetricsEnabled: MutableState<Boolean>,
 ) : ViewModel(), LoginViewModel {
 
     companion object {

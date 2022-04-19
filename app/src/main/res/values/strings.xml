@@ -5,7 +5,7 @@
     <string name="welcome">Welcome to the Basics Code Lab!</string>
     <string name="continue_text">Continue</string>
     <string name="hello_text">Hello,</string>
-    <string name="expanded_text">"Composem ipsum color sit lazy, padding theme elit, sed do bouncy. "</string>
+    <string name="expanded_text">"Compose ipsum color sit lazy, padding theme elit, sed do bouncy. "</string>
     <string name="login_text">Login</string>
     <string name="forgot_password_text">Forgot Password?</string>
     <string name="create_account_text">Create a new account</string>
@@ -18,8 +18,17 @@
     <string name="password_invisible_text">Password Is Invisible</string>
     <string name="user_name_invalid_text">The user name is invalid.</string>
     <string name="password_invalid_text">The password is invalid.</string>
-    <string name="logging_in_text">Logging in...</string>
+    <string name="logging_in_text">Logging in…</string>
     <string name="internal_server_error">Encountered Internal Server Error</string>
     <string name="dashboard_text">Dashboard</string>
     <string name="logout_text">Logout</string>
+    <string name="enable_biometrics_prompt">Enable Biometrics Prompt</string>
+    <string name="biometrics_authentication_succeeded">Biometrics Authentication Succeeded</string>
+    <string name="biometrics_authentication_failed">Biometrics Authentication Failed</string>
+    <string name="biometrics_authentication_error">Biometrics Authentication Error (%s): %s</string>
+    <string name="biometrics_authentication_cancelled">Biometrics Authentication Cancelled</string>
+    <string name="prompt_info_title">Biometric Authentication</string>
+    <string name="prompt_info_subtitle">Enter biometric credentials to proceed.</string>
+    <string name="prompt_info_description">Description</string>
+    <string name="prompt_info_use_app_password">Input your Fingerprint or FaceID to ensure it is you!</string>
 </resources>

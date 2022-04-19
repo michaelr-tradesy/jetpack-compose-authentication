@@ -49,6 +49,7 @@ class LoginStoreFactory(
         override fun executeIntent(intent: LoginStore.Intent, getState: () -> LoginStore.State) {
             when (intent) {
                 is LoginStore.Intent.Idle -> TODO("Not yet implemented=[$intent]")
+                is LoginStore.Intent.BioMetricsChanged -> onBioMetricsChanged(intent.isEnabled)
                 is LoginStore.Intent.UserNameProvided -> onUserNameProvided(intent.text)
                 is LoginStore.Intent.PasswordProvided -> onPasswordProvided(intent.text)
                 is LoginStore.Intent.LoginRequested -> onLoginRequested(
@@ -63,6 +64,10 @@ class LoginStoreFactory(
                 )
                 is LoginStore.Intent.LaunchDashboard -> onLaunchDashboard(intent.context)
             }
+        }
+
+        private fun onBioMetricsChanged(isEnabled: Boolean) {
+            dispatch(LoginStore.Result.PromptForBioMetric)
         }
 
         private fun onLaunchDashboard(context: Context) {

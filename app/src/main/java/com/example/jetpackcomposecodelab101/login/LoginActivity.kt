@@ -1,7 +1,17 @@
 package com.example.jetpackcomposecodelab101.login
 
+import android.Manifest
+import android.app.KeyguardManager
+import android.content.Context
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Bundle
+import android.widget.Toast
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
+import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
+import androidx.biometric.BiometricPrompt
+import androidx.biometric.BiometricPrompt.AuthenticationError
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -33,6 +43,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.os.CancellationSignal
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.arkivanov.mvikotlin.core.lifecycle.asMviLifecycle
@@ -63,11 +76,34 @@ import kotlinx.coroutines.flow.FlowCollector
 @ExperimentalStateKeeperApi
 class LoginActivity : DefaultAppActivity() {
 
+    private var cancellationSignal: CancellationSignal? = null
+    private var cryptoObject: BiometricPrompt.CryptoObject? = null
     private lateinit var viewModel: MutableState<DefaultLoginViewModel>
-
-    //    private lateinit var viewModel: LoginViewModel
     private lateinit var controller: LoginController
     private lateinit var coroutineScope: CoroutineScope
+    private val authenticationCallback: BiometricPrompt.AuthenticationCallback =
+        object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationError(
+                @AuthenticationError errorCode: Int, errString: CharSequence,
+            ) {
+                super.onAuthenticationError(errorCode, errString)
+                showToastMessage(
+                    R.string.biometrics_authentication_error,
+                    errorCode.toString(),
+                    errString.toString()
+                )
+            }
+
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                super.onAuthenticationSucceeded(result)
+                showToastMessage(R.string.biometrics_authentication_succeeded)
+            }
+
+            override fun onAuthenticationFailed() {
+                super.onAuthenticationFailed()
+                showToastMessage(R.string.biometrics_authentication_failed)
+            }
+        }
 
     @ExperimentalStateKeeperApi
     companion object {
@@ -106,6 +142,7 @@ class LoginActivity : DefaultAppActivity() {
         val passwordFocusRequester = remember { FocusRequester() }
         val responseText = rememberSaveable { mutableStateOf("") }
         val isLoginEnabled = rememberSaveable { mutableStateOf(false) }
+        val isBioMetricsEnabled = rememberSaveable { mutableStateOf(false) }
 
         viewModel = remember {
             mutableStateOf(DefaultLoginViewModel(
@@ -123,6 +160,7 @@ class LoginActivity : DefaultAppActivity() {
                 focusManager = focusManager,
                 keyboardController = keyboardController,
                 currentState = currentState,
+                isBioMetricsEnabled = isBioMetricsEnabled
             ))
         }
     }
@@ -193,13 +231,14 @@ class LoginActivity : DefaultAppActivity() {
             LoginStore.State.AccessToken,
             LoginStore.State.LaunchDashboard -> this.launchDashboard()
             is LoginStore.State.LoginUiState -> onLoginUiState(value)
+            LoginStore.State.PromptForBioMetric -> launchBiometrics()
         }
     }
 
     private fun onLoginUiState(state: LoginStore.State.LoginUiState) {
-        if(state.canShowDashboard) {
+        if (state.canShowDashboard) {
             this.launchDashboard()
-        }  else {
+        } else {
             viewModel.value.apply {
                 isLoginEnabled.value = state.isLoginEnabled
                 isPasswordEnabled.value = state.isPasswordEnabled
@@ -208,7 +247,7 @@ class LoginActivity : DefaultAppActivity() {
                 passwordShowError.value = state.passwordShowError
                 state.userName?.let { userName.value = it }
                 state.password?.let { password.value = it }
-                if(state.shouldHideKeyboard) {
+                if (state.shouldHideKeyboard) {
                     keyboardController?.hide()
                 }
             }
@@ -227,6 +266,68 @@ class LoginActivity : DefaultAppActivity() {
             focusManager.clearFocus(force = true)
             userNameFocusRequester.requestFocus()
         }
+    }
+
+    private fun showToastMessage(resourceId: Int, vararg args: String) {
+        showToastMessage(getString(resourceId, args))
+    }
+
+    private fun showToastMessage(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun isBiometricsSupported(): Boolean {
+        val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+
+        if (!keyguardManager.isDeviceSecure) {
+            return true
+        } else if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.USE_BIOMETRIC) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return false
+        }
+
+        return packageManager.hasSystemFeature(PackageManager.FEATURE_FINGERPRINT)
+    }
+
+    private fun launchBiometrics() {
+        if (isBiometricsSupported()) {
+            val biometricManager = BiometricManager.from(this)
+            val executor = ContextCompat.getMainExecutor(this)
+
+            val biometricPromptInfo = BiometricPrompt.PromptInfo.Builder()
+                .apply {
+                    setTitle(getString(R.string.prompt_info_title))
+                    setSubtitle(getString(R.string.prompt_info_subtitle))
+                    setDescription(getString(R.string.prompt_info_description))
+                    setConfirmationRequired(false)
+                    setAllowedAuthenticators(BIOMETRIC_WEAK)
+                    setNegativeButtonText(getString(R.string.prompt_info_use_app_password))
+                }.build()
+//            biometricPrompt.authenticate(getCancellationSignal())
+            val biometricPrompt = BiometricPrompt(this, executor, authenticationCallback)
+            biometricPrompt.apply {
+                cryptoObject?.let {
+                    authenticate(biometricPromptInfo, it)
+                } ?: run {
+                    authenticate(biometricPromptInfo)
+                }
+            }
+        }
+    }
+
+    private fun isBiometricReady(context: Context) =
+        hasBiometricCapability(context) == BiometricManager.BIOMETRIC_SUCCESS
+
+    private fun hasBiometricCapability(context: Context): Int {
+        val biometricManager = BiometricManager.from(context)
+        return biometricManager.canAuthenticate(BIOMETRIC_STRONG)
+    }
+
+    private fun getCancellationSignal(): CancellationSignal {
+        cancellationSignal = CancellationSignal()
+        cancellationSignal?.setOnCancelListener { showToastMessage(R.string.biometrics_authentication_cancelled) }
+        return cancellationSignal as CancellationSignal
     }
 
     @Preview(
@@ -282,6 +383,9 @@ class LoginActivity : DefaultAppActivity() {
                 CreateUserNameField()
                 Divider(color = Color.LightGray)
                 CreatePasswordField()
+                if (isBiometricReady(this@LoginActivity)) {
+                    CreateBioMetricsField()
+                }
                 CreateLoginButtonField()
                 CreateForgotPasswordField()
                 CreateSignUpField()
@@ -385,6 +489,32 @@ class LoginActivity : DefaultAppActivity() {
     }
 
     @Composable
+    private fun CreateBioMetricsField() {
+        viewModel.value.apply {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                    text = stringResource(id = R.string.enable_biometrics_prompt)
+                )
+                Switch(
+                    modifier = Modifier.padding(vertical = 24.dp),
+                    enabled = isPasswordEnabled.value,
+                    checked = isBioMetricsEnabled.value,
+                    onCheckedChange = {
+                        controller.emit(LoginStore.Intent.BioMetricsChanged.values(
+                            isBioMetricsEnabled.value
+                        ))
+                    }
+                )
+            }
+        }
+    }
+
+    @Composable
     private fun CreateLoginButtonField() {
         viewModel.value.apply {
             Row(
@@ -433,26 +563,28 @@ class LoginActivity : DefaultAppActivity() {
                     }
                     currentState.value is LoginStore.State.LoginUiState
                             && (currentState.value as LoginStore.State.LoginUiState).throwable != null -> {
-                        val message =
-                            (currentState.value as LoginStore.State.LoginUiState).throwable?.message
-                                ?: stringResource(
-                                    id = R.string.internal_server_error
-                                )
-                        Text(
-                            modifier = Modifier.padding(horizontal = 8.dp),
-                            color = MaterialTheme.colors.error,
-                            text = message
-                        )
-                    }
-                    currentState.value == LoginStore.State.LoginAttemptInProgress -> {
-                        Text(
-                            modifier = Modifier.padding(horizontal = 8.dp),
-                            text = stringResource(id = R.string.logging_in_text)
-                        )
-                        CreateCircularProgressIndicator(
-                            modifier = Modifier.padding(horizontal = 8.dp),
-                            progress = 0f
-                        )
+                        val loginUiState = (currentState.value as LoginStore.State.LoginUiState)
+                        if (loginUiState.throwable != null) {
+                            val message =
+                                (currentState.value as LoginStore.State.LoginUiState).throwable?.message
+                                    ?: stringResource(
+                                        id = R.string.internal_server_error
+                                    )
+                            Text(
+                                modifier = Modifier.padding(horizontal = 8.dp),
+                                color = MaterialTheme.colors.error,
+                                text = message
+                            )
+                        } else if (loginUiState.shouldShowProgress) {
+                            Text(
+                                modifier = Modifier.padding(horizontal = 8.dp),
+                                text = stringResource(id = R.string.logging_in_text)
+                            )
+                            CreateCircularProgressIndicator(
+                                modifier = Modifier.padding(horizontal = 8.dp),
+                                progress = 0f
+                            )
+                        }
                     }
                 }
                 Button(

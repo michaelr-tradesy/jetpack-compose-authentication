@@ -8,6 +8,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.ComposeView
+import androidx.fragment.app.FragmentActivity
 import com.example.jetpackcomposecodelab101.ui.AppThemeState
 import com.example.jetpackcomposecodelab101.ui.DefaultAppThemeState
 import com.example.jetpackcomposecodelab101.ui.theme.ColorPalette
@@ -17,7 +18,7 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 interface AppActivity
 
-abstract class DefaultAppActivity :  ComponentActivity(), AppActivity {
+abstract class DefaultAppActivity :  FragmentActivity(), AppActivity {
 
     private lateinit var systemUiController: SystemUiController
     private lateinit var appThemeState: MutableState<AppThemeState>

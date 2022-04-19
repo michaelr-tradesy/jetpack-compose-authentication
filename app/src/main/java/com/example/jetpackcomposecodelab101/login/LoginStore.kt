@@ -18,6 +18,15 @@ interface LoginStore :
     // The user invokes intents
     sealed class Intent : JvmSerializable {
         object Idle : Intent()
+        object BioMetricsChanged : Intent() {
+            var isEnabled: Boolean = false
+
+            fun values(isEnabled: Boolean): Intent {
+                this.isEnabled = isEnabled
+                return this
+            }
+        }
+
         data class LaunchDashboard(var context: Context) : Intent()
         object UserNameProvided : Intent() {
             var text = ""
@@ -60,6 +69,7 @@ interface LoginStore :
     // Intents produces results
     sealed class Result : JvmSerializable {
         object Idle : Result()
+        object PromptForBioMetric : Result()
         data class LaunchDashboard(var context: Context) : Result()
         object UserNameInvalid : Result() {
             var text = ""
@@ -129,11 +139,13 @@ interface LoginStore :
             val password: String? = null,
             val shouldHideKeyboard: Boolean = false,
             val canShowDashboard: Boolean = false,
+            val shouldShowProgress: Boolean = false,
         ) : State()
 
         object LaunchDashboard : State()
         object FocusOnUserName : State()
         object UserNameInProgress : State()
+        object PromptForBioMetric : State()
         object CanProvidePassword : State()
         object PasswordInvalid : State() {
             var text: String = ""
@@ -235,7 +247,8 @@ interface LoginStore :
                         isUserNameEnabled = false,
                         userNameShowError = false,
                         passwordShowError = false,
-                        shouldHideKeyboard = true
+                        shouldHideKeyboard = true,
+                        shouldShowProgress = true
                     )
                     is Result.PasswordInProgress -> PasswordInProgress
                     is Result.PasswordInvalid -> LoginUiState(
@@ -255,6 +268,7 @@ interface LoginStore :
                         passwordShowError = false,
                         userName = input.text,
                     )
+                    Result.PromptForBioMetric -> PromptForBioMetric
                 }
             }
         }
