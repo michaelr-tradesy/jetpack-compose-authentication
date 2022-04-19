@@ -11,7 +11,10 @@ import com.arkivanov.mvikotlin.extensions.reaktive.ReaktiveExecutor
 import com.arkivanov.mvikotlin.keepers.statekeeper.ExperimentalStateKeeperApi
 import com.arkivanov.mvikotlin.keepers.statekeeper.StateKeeper
 import com.example.jetpackcomposecodelab101.ui.AppCoroutineScope
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @ExperimentalComposeUiApi
 @ExperimentalStateKeeperApi
@@ -19,9 +22,10 @@ class LoginStoreFactory(
     private val viewModel: LoginViewModel,
     private val storeFactory: StoreFactory,
     private val interactor: LoginInteractor = DefaultLoginInteractor(),
-    private val coroutineScope: CoroutineScope = AppCoroutineScope()
+    private val coroutineScope: CoroutineScope = AppCoroutineScope(),
 ) {
-    private object ReducerImpl : Reducer<LoginStore.State, LoginStore.Result> {
+    private object ReducerImpl :
+        Reducer<LoginStore.State, LoginStore.Result> {
         override fun LoginStore.State.reduce(result: LoginStore.Result): LoginStore.State =
             LoginStore.State.convert(result)
     }
@@ -47,18 +51,17 @@ class LoginStoreFactory(
                 is LoginStore.Intent.Idle -> TODO("Not yet implemented=[$intent]")
                 is LoginStore.Intent.UserNameProvided -> onUserNameProvided(intent.text)
                 is LoginStore.Intent.PasswordProvided -> onPasswordProvided(intent.text)
-                is LoginStore.Intent.LoginRequested -> onLoginRequested()
+                is LoginStore.Intent.LoginRequested -> onLoginRequested(
+                    getState(),
+                    intent.userName,
+                    intent.password
+                )
                 is LoginStore.Intent.ForgotPassword -> TODO("Not yet implemented=[$intent]")
                 is LoginStore.Intent.SignUpRequested -> TODO("Not yet implemented=[$intent]")
-                is LoginStore.Intent.FinishedProvidingPassword -> onLoginRequested()
                 is LoginStore.Intent.FinishedProvidingUserName -> onFinishedProvidingUserName(
                     getState()
                 )
                 is LoginStore.Intent.LaunchDashboard -> onLaunchDashboard(intent.context)
-                is LoginStore.Intent.LoginAttempt -> onLoginAttempt(
-                    intent.userName,
-                    intent.password
-                )
             }
         }
 
@@ -73,7 +76,7 @@ class LoginStoreFactory(
         // region Process UserName
 
         private fun onFinishedProvidingUserName(state: LoginStore.State) {
-            if (state is LoginStore.State.CanProvidePassword) {
+            if (state is LoginStore.State.LoginUiState && state.isPasswordEnabled) {
                 dispatch(LoginStore.Result.FocusOnPassword)
             } else {
                 dispatch(LoginStore.Result.FocusOnUserName)
@@ -122,17 +125,16 @@ class LoginStoreFactory(
 
         // region Login Attempt
 
-        private fun onLoginAttempt(userName: String, password: String) {
-            coroutineScope.launch {
-                delay(3000)
-                mainScope.launch {
-                    dispatch(interactor.login(userName, password))
+        private fun onLoginRequested(state: LoginStore.State, userName: String, password: String) {
+            if (state is LoginStore.State.LoginUiState && state.isLoginEnabled) {
+                coroutineScope.launch {
+                    delay(3000)
+                    mainScope.launch {
+                        dispatch(interactor.login(userName, password))
+                    }
                 }
+                dispatch(LoginStore.Result.LoginAttemptInProgress)
             }
-        }
-
-        private fun onLoginRequested() {
-            dispatch(LoginStore.Result.LoginAttemptInProgress)
         }
 
         // endregion

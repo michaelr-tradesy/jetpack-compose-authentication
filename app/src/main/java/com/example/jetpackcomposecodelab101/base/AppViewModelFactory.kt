@@ -36,7 +36,8 @@ class AppViewModelFactory(
                 DefaultDashboardViewModel(handle)
             }
             modelClass.isAssignableFrom(LoginActivity::class.java) -> {
-                DefaultLoginViewModel(handle)
+                throw Throwable("Unable to instantiate DefaultLoginViewModel: Not yet implemented")
+//                DefaultLoginViewModel(handle)
             }
             else -> throw Throwable("Class Not Recognized=[$modelClass]")
         }

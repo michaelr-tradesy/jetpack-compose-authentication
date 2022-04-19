@@ -62,6 +62,8 @@ dependencies {
 //    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.4.0'
 //    implementation "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.5.0-alpha01"
     implementation 'androidx.activity:activity-compose:1.4.0'
+    implementation("androidx.biometric:biometric:1.2.0-alpha04")
+    implementation("androidx.biometric:biometric-ktx:1.2.0-alpha04")
     implementation "androidx.compose.material:material-icons-extended:$compose_version"
     implementation("com.arkivanov.mvikotlin:mvikotlin:$mvi_kotlin_version")
     implementation("com.arkivanov.mvikotlin:mvikotlin-extensions-coroutines:$mvi_kotlin_version")

@@ -2,7 +2,6 @@ package com.example.jetpackcomposecodelab101.login
 
 import android.content.res.Configuration
 import android.os.Bundle
-import androidx.activity.viewModels
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -36,7 +35,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.ViewModelProvider
 import com.arkivanov.mvikotlin.core.lifecycle.asMviLifecycle
 import com.arkivanov.mvikotlin.keepers.instancekeeper.ExperimentalInstanceKeeperApi
 import com.arkivanov.mvikotlin.keepers.instancekeeper.getInstanceKeeper
@@ -45,8 +43,8 @@ import com.arkivanov.mvikotlin.keepers.statekeeper.StateKeeper
 import com.arkivanov.mvikotlin.keepers.statekeeper.get
 import com.arkivanov.mvikotlin.keepers.statekeeper.getSerializableStateKeeperRegistry
 import com.example.jetpackcomposecodelab101.R
-import com.example.jetpackcomposecodelab101.base.AppViewModelFactory
 import com.example.jetpackcomposecodelab101.base.DefaultAppActivity
+import com.example.jetpackcomposecodelab101.base.launchDashboard
 import com.example.jetpackcomposecodelab101.ui.DefaultAppThemeState
 import com.example.jetpackcomposecodelab101.ui.theme.ColorPalette
 import com.example.jetpackcomposecodelab101.ui.theme.JetpackComposeCodeLab101Theme
@@ -65,7 +63,9 @@ import kotlinx.coroutines.flow.FlowCollector
 @ExperimentalStateKeeperApi
 class LoginActivity : DefaultAppActivity() {
 
-    private lateinit var viewModel: LoginViewModel
+    private lateinit var viewModel: MutableState<DefaultLoginViewModel>
+
+    //    private lateinit var viewModel: LoginViewModel
     private lateinit var controller: LoginController
     private lateinit var coroutineScope: CoroutineScope
 
@@ -83,14 +83,48 @@ class LoginActivity : DefaultAppActivity() {
     override fun MyApp(savedInstanceState: Bundle?) {
 //        val viewModel: LoginViewModel by viewModels { AppViewModelFactory(this) }
 
-        val vm = remember { mutableStateOf(DefaultLoginViewModel()) }
-        viewModel = vm.value
+        InitViewModel()
         coroutineScope = rememberCoroutineScope()
-        viewModel.focusManager = LocalFocusManager.current
-        viewModel.keyboardController = LocalSoftwareKeyboardController.current
-        viewModel.currentState = remember { mutableStateOf(LoginStore.State.Idle) }
         CreateMviKotlinController()
         DefaultView()
+    }
+
+    @Composable
+    private fun InitViewModel() {
+        val focusManager = LocalFocusManager.current
+        val keyboardController = LocalSoftwareKeyboardController.current
+        val currentState: MutableState<LoginStore.State> =
+            remember { mutableStateOf(LoginStore.State.Idle) }
+        val isUserNameEnabled = rememberSaveable { mutableStateOf(true) }
+        val userNameShowError = rememberSaveable { mutableStateOf(false) }
+        val userName = rememberSaveable { mutableStateOf("") }
+        val userNameFocusRequester = remember { FocusRequester() }
+        val password = rememberSaveable { mutableStateOf("") }
+        val isPasswordVisible = remember { mutableStateOf(false) }
+        val isPasswordEnabled = remember { mutableStateOf(false) }
+        val passwordShowError = remember { mutableStateOf(false) }
+        val passwordFocusRequester = remember { FocusRequester() }
+        val responseText = rememberSaveable { mutableStateOf("") }
+        val isLoginEnabled = rememberSaveable { mutableStateOf(false) }
+
+        viewModel = remember {
+            mutableStateOf(DefaultLoginViewModel(
+                isPasswordVisible = isPasswordVisible,
+                isPasswordEnabled = isPasswordEnabled,
+                passwordShowError = passwordShowError,
+                password = password,
+                passwordFocusRequester = passwordFocusRequester,
+                responseText = responseText,
+                isLoginEnabled = isLoginEnabled,
+                isUserNameEnabled = isUserNameEnabled,
+                userNameShowError = userNameShowError,
+                userName = userName,
+                userNameFocusRequester = userNameFocusRequester,
+                focusManager = focusManager,
+                keyboardController = keyboardController,
+                currentState = currentState,
+            ))
+        }
     }
 
     @Composable
@@ -103,7 +137,7 @@ class LoginActivity : DefaultAppActivity() {
         }
 
         controller = DefaultLoginController(
-            viewModel,
+            viewModel.value,
             lifecycle.asMviLifecycle(),
             instanceKeeper,
             stateKeeper
@@ -148,17 +182,50 @@ class LoginActivity : DefaultAppActivity() {
             LoginStore.State.CanLogin -> {}
             LoginStore.State.CanProvidePassword -> {}
             LoginStore.State.Error -> {}
-            LoginStore.State.FocusOnPassword -> {}
-            LoginStore.State.FocusOnUserName -> {}
+            LoginStore.State.FocusOnPassword -> onFocusOnPassword()
+            LoginStore.State.FocusOnUserName -> onFocusOnUserName()
             LoginStore.State.Idle -> {}
             LoginStore.State.LoginAttemptInProgress -> {}
             LoginStore.State.PasswordInProgress -> {}
             LoginStore.State.PasswordInvalid -> {}
             LoginStore.State.UserNameInProgress -> {}
             LoginStore.State.UserNameInvalid -> {}
-            LoginStore.State.AccessToken -> {
-                controller.emit(LoginStore.Intent.LaunchDashboard(this))
+            LoginStore.State.AccessToken,
+            LoginStore.State.LaunchDashboard -> this.launchDashboard()
+            is LoginStore.State.LoginUiState -> onLoginUiState(value)
+        }
+    }
+
+    private fun onLoginUiState(state: LoginStore.State.LoginUiState) {
+        if(state.canShowDashboard) {
+            this.launchDashboard()
+        }  else {
+            viewModel.value.apply {
+                isLoginEnabled.value = state.isLoginEnabled
+                isPasswordEnabled.value = state.isPasswordEnabled
+                isUserNameEnabled.value = state.isUserNameEnabled
+                userNameShowError.value = state.userNameShowError
+                passwordShowError.value = state.passwordShowError
+                state.userName?.let { userName.value = it }
+                state.password?.let { password.value = it }
+                if(state.shouldHideKeyboard) {
+                    keyboardController?.hide()
+                }
             }
+        }
+    }
+
+    private fun onFocusOnPassword() {
+        viewModel.value.apply {
+            focusManager.clearFocus(force = true)
+            passwordFocusRequester.requestFocus()
+        }
+    }
+
+    private fun onFocusOnUserName() {
+        viewModel.value.apply {
+            focusManager.clearFocus(force = true)
+            userNameFocusRequester.requestFocus()
         }
     }
 
@@ -190,8 +257,7 @@ class LoginActivity : DefaultAppActivity() {
                     )
                 )
             }
-        viewModel = DefaultLoginViewModel()
-        viewModel.currentState = remember { mutableStateOf(LoginStore.State.Idle) }
+        InitViewModel()
         JetpackComposeCodeLab101Theme(
             systemUiController = systemUiController,
             appThemeState = appThemeState.value,
@@ -225,177 +291,189 @@ class LoginActivity : DefaultAppActivity() {
 
     @Composable
     private fun CreateUserNameField() {
-        viewModel.isUserNameEnabled = rememberSaveable { mutableStateOf(true) }
-        viewModel.userNameShowError = rememberSaveable { mutableStateOf(false) }
-        viewModel.userName = rememberSaveable { mutableStateOf("") }
-        viewModel.userNameFocusRequester = remember { FocusRequester() }
-
-        TextField(
-            modifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(viewModel.userNameFocusRequester),
-            enabled = viewModel.isUserNameEnabled.value,
-            value = viewModel.userName.value,
-            onValueChange = {
-                controller.emit(LoginStore.Intent.UserNameProvided.values(it))
-            },
-            placeholder = {
-                Text(text = stringResource(R.string.enter_user_name_text))
-            },
-            label = { Text(stringResource(R.string.user_name_text)) },
-            keyboardOptions = KeyboardOptions.Default.copy(
-                capitalization = KeyboardCapitalization.None,
-                autoCorrect = true,
-                keyboardType = KeyboardType.Email,
-                imeAction = ImeAction.Next
-            ),
-            keyboardActions = KeyboardActions(
-                onNext = {
-                    controller.emit(LoginStore.Intent.FinishedProvidingUserName)
-                }
-            ),
-            singleLine = true,
-            isError = viewModel.userNameShowError.value,
-            visualTransformation = VisualTransformation.None,
-            colors = TextFieldDefaults.outlinedTextFieldColors()
-        )
+        viewModel.value.apply {
+            TextField(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(userNameFocusRequester),
+                enabled = isUserNameEnabled.value,
+                value = userName.value,
+                onValueChange = {
+                    controller.emit(LoginStore.Intent.UserNameProvided.values(it))
+                },
+                placeholder = {
+                    Text(text = stringResource(R.string.enter_user_name_text))
+                },
+                label = { Text(stringResource(R.string.user_name_text)) },
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    capitalization = KeyboardCapitalization.None,
+                    autoCorrect = true,
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = {
+                        controller.emit(LoginStore.Intent.FinishedProvidingUserName)
+                    }
+                ),
+                singleLine = true,
+                isError = userNameShowError.value,
+                visualTransformation = VisualTransformation.None,
+                colors = TextFieldDefaults.outlinedTextFieldColors()
+            )
 //        DisposableEffect(Unit) {
 //            viewModel.userNameFocusRequester.requestFocus()
 //            viewModel.keyboardController?.show()
 //            onDispose { }
 //        }
+        }
     }
 
     @Composable
     private fun CreatePasswordField() {
-        viewModel.password = rememberSaveable { mutableStateOf("") }
-        viewModel.isPasswordVisible = remember { mutableStateOf(false) }
-        viewModel.isPasswordEnabled = remember { mutableStateOf(false) }
-        viewModel.passwordShowError = remember { mutableStateOf(false) }
-        viewModel.password = rememberSaveable { mutableStateOf("") }
-        viewModel.passwordFocusRequester = remember { FocusRequester() }
+        viewModel.value.apply {
+            TextField(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(passwordFocusRequester),
+                enabled = isPasswordEnabled.value,
+                value = password.value,
+                onValueChange = {
+                    controller.emit(LoginStore.Intent.PasswordProvided.values(it))
+                },
+                placeholder = {
+                    Text(text = stringResource(R.string.enter_password_text))
+                },
+                label = { Text(stringResource(R.string.password_text)) },
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    autoCorrect = true,
+                    capitalization = KeyboardCapitalization.None,
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Go
+                ),
+                keyboardActions = KeyboardActions(
+                    onGo = { requestLogin() }
+                ),
+                singleLine = true,
+                isError = passwordShowError.value,
+                visualTransformation =
+                if (isPasswordVisible.value) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    val (icon, iconColor) = if (isPasswordVisible.value) {
+                        Pair(Icons.Filled.Visibility, MaterialTheme.colors.secondary)
+                    } else {
+                        Pair(Icons.Filled.VisibilityOff, MaterialTheme.colors.secondaryVariant)
+                    }
 
-        TextField(
-            modifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(viewModel.passwordFocusRequester),
-            enabled = viewModel.isPasswordEnabled.value,
-            value = viewModel.password.value,
-            onValueChange = {
-                controller.emit(LoginStore.Intent.PasswordProvided.values(it))
-            },
-            placeholder = {
-                Text(text = stringResource(R.string.enter_password_text))
-            },
-            label = { Text(stringResource(R.string.password_text)) },
-            keyboardOptions = KeyboardOptions.Default.copy(
-                autoCorrect = true,
-                capitalization = KeyboardCapitalization.None,
-                keyboardType = KeyboardType.Password,
-                imeAction = ImeAction.Go
-            ),
-            keyboardActions = KeyboardActions(
-                onGo = {
-                    controller.emit(LoginStore.Intent.FinishedProvidingPassword)
-                }
-            ),
-            singleLine = true,
-            isError = viewModel.passwordShowError.value,
-            visualTransformation =
-            if (viewModel.isPasswordVisible.value) VisualTransformation.None else PasswordVisualTransformation(),
-            trailingIcon = {
-                val (icon, iconColor) = if (viewModel.isPasswordVisible.value) {
-                    Pair(Icons.Filled.Visibility, MaterialTheme.colors.secondary)
-                } else {
-                    Pair(Icons.Filled.VisibilityOff, MaterialTheme.colors.secondaryVariant)
-                }
-
-                IconButton(onClick = {
-                    viewModel.isPasswordVisible.value = !viewModel.isPasswordVisible.value
-                }) {
-                    Icon(
-                        icon,
-                        contentDescription = if (viewModel.isPasswordVisible.value) {
-                            stringResource(R.string.password_visible_text)
-                        } else {
-                            stringResource(R.string.password_invisible_text)
-                        },
-                        tint = iconColor
-                    )
-                }
-            },
-            colors = TextFieldDefaults.outlinedTextFieldColors()
-        )
+                    IconButton(onClick = {
+                        isPasswordVisible.value = !isPasswordVisible.value
+                    }) {
+                        Icon(
+                            icon,
+                            contentDescription = if (isPasswordVisible.value) {
+                                stringResource(R.string.password_visible_text)
+                            } else {
+                                stringResource(R.string.password_invisible_text)
+                            },
+                            tint = iconColor
+                        )
+                    }
+                },
+                colors = TextFieldDefaults.outlinedTextFieldColors()
+            )
+        }
     }
 
     @Composable
     private fun CreateLoginButtonField() {
-        viewModel.responseText = rememberSaveable { mutableStateOf("") }
-        viewModel.isLoginEnabled = rememberSaveable { mutableStateOf(false) }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            when {
-                viewModel.userNameShowError.value -> {
-                    Text(
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                        color = MaterialTheme.colors.error,
-                        text = stringResource(id = R.string.user_name_invalid_text)
-                    )
-                }
-                viewModel.passwordShowError.value -> {
-                    Text(
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                        color = MaterialTheme.colors.error,
-                        text = stringResource(id = R.string.password_invalid_text)
-                    )
-                }
-                viewModel.currentState.value is LoginStore.State.ApiError -> {
-                    val message =
-                        (viewModel.currentState.value as LoginStore.State.ApiError).throwable?.message
-                            ?: stringResource(
-                                id = R.string.internal_server_error
-                            )
-                    Text(
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                        color = MaterialTheme.colors.error,
-                        text = message
-                    )
-                }
-                viewModel.currentState.value is LoginStore.State.Error -> {
-                    val message =
-                        (viewModel.currentState.value as LoginStore.State.Error).throwable?.message
-                            ?: stringResource(
-                                id = R.string.internal_server_error
-                            )
-                    Text(
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                        color = MaterialTheme.colors.error,
-                        text = message
-                    )
-                }
-                viewModel.currentState.value == LoginStore.State.LoginAttemptInProgress -> {
-                    Text(
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                        text = stringResource(id = R.string.logging_in_text)
-                    )
-                    CreateCircularProgressIndicator(
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                        progress = 0f
-                    )
-                }
-            }
-            Button(
-                modifier = Modifier.padding(vertical = 24.dp),
-                enabled = viewModel.isLoginEnabled.value,
-                onClick = { controller.emit(LoginStore.Intent.LoginRequested) }
+        viewModel.value.apply {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(stringResource(R.string.login_text))
+                when {
+                    userNameShowError.value -> {
+                        Text(
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            color = MaterialTheme.colors.error,
+                            text = stringResource(id = R.string.user_name_invalid_text)
+                        )
+                    }
+                    passwordShowError.value -> {
+                        Text(
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            color = MaterialTheme.colors.error,
+                            text = stringResource(id = R.string.password_invalid_text)
+                        )
+                    }
+                    currentState.value is LoginStore.State.ApiError -> {
+                        val message =
+                            (currentState.value as LoginStore.State.ApiError).throwable?.message
+                                ?: stringResource(
+                                    id = R.string.internal_server_error
+                                )
+                        Text(
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            color = MaterialTheme.colors.error,
+                            text = message
+                        )
+                    }
+                    currentState.value is LoginStore.State.Error -> {
+                        val message =
+                            (currentState.value as LoginStore.State.Error).throwable?.message
+                                ?: stringResource(
+                                    id = R.string.internal_server_error
+                                )
+                        Text(
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            color = MaterialTheme.colors.error,
+                            text = message
+                        )
+                    }
+                    currentState.value is LoginStore.State.LoginUiState
+                            && (currentState.value as LoginStore.State.LoginUiState).throwable != null -> {
+                        val message =
+                            (currentState.value as LoginStore.State.LoginUiState).throwable?.message
+                                ?: stringResource(
+                                    id = R.string.internal_server_error
+                                )
+                        Text(
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            color = MaterialTheme.colors.error,
+                            text = message
+                        )
+                    }
+                    currentState.value == LoginStore.State.LoginAttemptInProgress -> {
+                        Text(
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            text = stringResource(id = R.string.logging_in_text)
+                        )
+                        CreateCircularProgressIndicator(
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            progress = 0f
+                        )
+                    }
+                }
+                Button(
+                    modifier = Modifier.padding(vertical = 24.dp),
+                    enabled = isLoginEnabled.value,
+                    onClick = {
+                        requestLogin()
+                    }
+                ) {
+                    Text(stringResource(R.string.login_text))
+                }
             }
+
         }
+    }
+
+    private fun DefaultLoginViewModel.requestLogin() {
+        controller.emit(LoginStore.Intent.LoginRequested.values(
+            userName.value,
+            password.value
+        ))
     }
 
     @Composable
@@ -403,7 +481,7 @@ class LoginActivity : DefaultAppActivity() {
         modifier: Modifier = Modifier,
         progress: Float = 0.0f,
         color: Color = MaterialTheme.colors.primary,
-        strokeWidth: Dp = ProgressIndicatorDefaults.StrokeWidth
+        strokeWidth: Dp = ProgressIndicatorDefaults.StrokeWidth,
     ) {
         val infiniteTransition = rememberInfiniteTransition()
         val progressAnimationValue by infiniteTransition.animateFloat(
@@ -422,30 +500,34 @@ class LoginActivity : DefaultAppActivity() {
 
     @Composable
     private fun CreateForgotPasswordField() {
-        Button(
-            modifier = Modifier.padding(vertical = 24.dp),
-            enabled = viewModel.currentState.value != LoginStore.State.LoginAttemptInProgress,
-            onClick = { }
-        ) {
-            Text(stringResource(R.string.forgot_password_text))
+        viewModel.value.apply {
+            Button(
+                modifier = Modifier.padding(vertical = 24.dp),
+                enabled = currentState.value != LoginStore.State.LoginAttemptInProgress,
+                onClick = { }
+            ) {
+                Text(stringResource(R.string.forgot_password_text))
+            }
         }
     }
 
     @Composable
     private fun CreateSignUpField() {
-        Text(stringResource(R.string.dont_have_an_account))
-        Text(
-            modifier = Modifier.clickable {
-                if (viewModel.currentState.value != LoginStore.State.LoginAttemptInProgress) {
-                    println("Sign Up Clicked")
-                }
-            },
-            style = TextStyle(
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colors.primary
-            ),
-            text = stringResource(R.string.create_account_text)
-        )
+        viewModel.value.apply {
+            Text(stringResource(R.string.dont_have_an_account))
+            Text(
+                modifier = Modifier.clickable {
+                    if (currentState.value != LoginStore.State.LoginAttemptInProgress) {
+                        println("Sign Up Clicked")
+                    }
+                },
+                style = TextStyle(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary
+                ),
+                text = stringResource(R.string.create_account_text)
+            )
+        }
     }
 }
 

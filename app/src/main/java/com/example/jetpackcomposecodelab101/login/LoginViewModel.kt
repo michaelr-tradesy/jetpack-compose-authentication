@@ -31,30 +31,27 @@ interface LoginViewModel {
 @ExperimentalComposeUiApi
 class DefaultLoginViewModel(
     // Data is stored as a Bundle
-    private val savedStateHandle: SavedStateHandle? = null
+private val savedStateHandle: SavedStateHandle? = null,
+override var keyboardController : SoftwareKeyboardController? = null,
+override var responseText: MutableState<String>,
+override var focusManager: FocusManager,
+override var currentState: MutableState<LoginStore.State>,
+override var userName: MutableState<String>,
+override var password: MutableState<String>,
+override var isPasswordVisible: MutableState<Boolean>,
+override var passwordShowError: MutableState<Boolean>,
+override var isPasswordEnabled: MutableState<Boolean>,
+override var passwordFocusRequester: FocusRequester,
+override var userNameFocusRequester: FocusRequester,
+override var userNameShowError: MutableState<Boolean>,
+override var isUserNameEnabled: MutableState<Boolean>,
+override var isLoginEnabled: MutableState<Boolean>
 ) : ViewModel(), LoginViewModel {
 
     companion object {
         const val UserNameKey = "userName"
         const val PasswordKey = "password"
     }
-
-    override var keyboardController : SoftwareKeyboardController? = null
-    override lateinit var responseText: MutableState<String>
-    override lateinit var focusManager: FocusManager
-    override lateinit var currentState: MutableState<LoginStore.State>
-
-    override lateinit var userName: MutableState<String>
-    override lateinit var password: MutableState<String>
-
-    override lateinit var isPasswordVisible: MutableState<Boolean>
-    override lateinit var passwordShowError: MutableState<Boolean>
-    override lateinit var isPasswordEnabled: MutableState<Boolean>
-    override lateinit var passwordFocusRequester: FocusRequester
-    override lateinit var userNameFocusRequester: FocusRequester
-    override lateinit var userNameShowError: MutableState<Boolean>
-    override lateinit var isUserNameEnabled: MutableState<Boolean>
-    override lateinit var isLoginEnabled: MutableState<Boolean>
 
     private fun wasGoPressed(actionId: Int, keyEvent: KeyEvent?) =
         (actionId == EditorInfo.IME_ACTION_GO || actionId == EditorInfo.IME_ACTION_DONE

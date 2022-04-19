@@ -68,69 +68,6 @@ class DefaultLoginController(
 
     private fun onStateReceived(state: LoginStore.State) {
         viewModel.currentState.value = state
-        when (state) {
-            is LoginStore.State.LaunchDashboard -> {
-                state.context.launchDashboard()
-            }
-            LoginStore.State.AccessToken -> {
-                viewModel.isUserNameEnabled.value = true
-                viewModel.isPasswordEnabled.value = true
-                viewModel.isLoginEnabled.value = true
-            }
-            LoginStore.State.ApiError -> {
-                viewModel.isUserNameEnabled.value = true
-                viewModel.isPasswordEnabled.value = true
-                viewModel.isLoginEnabled.value = true
-            }
-            LoginStore.State.CanLogin -> {
-                viewModel.isLoginEnabled.value = true
-                viewModel.passwordShowError.value = false
-                viewModel.userNameShowError.value = false
-            }
-            LoginStore.State.CanProvidePassword -> {
-                viewModel.isPasswordEnabled.value = true
-                viewModel.userNameShowError.value = false
-                viewModel.passwordShowError.value = false
-                viewModel.isLoginEnabled.value = false
-            }
-            LoginStore.State.Error -> {
-                viewModel.isUserNameEnabled.value = true
-                viewModel.isPasswordEnabled.value = true
-                viewModel.isLoginEnabled.value = true
-            }
-            LoginStore.State.FocusOnPassword -> {
-                viewModel.focusManager.clearFocus(force = true)
-                viewModel.passwordFocusRequester.requestFocus()
-            }
-            LoginStore.State.FocusOnUserName -> {
-                viewModel.focusManager.clearFocus(force = true)
-                viewModel.userNameFocusRequester.requestFocus()
-            }
-            LoginStore.State.Idle -> {}
-            LoginStore.State.LoginAttemptInProgress -> {
-                viewModel.keyboardController?.hide()
-                viewModel.isUserNameEnabled.value = false
-                viewModel.isPasswordEnabled.value = false
-                viewModel.isLoginEnabled.value = false
-                store.accept(
-                    LoginStore.Intent.LoginAttempt.values(
-                        viewModel.userName.value,
-                        viewModel.password.value
-                    )
-                )
-            }
-            LoginStore.State.PasswordInProgress -> {}
-            LoginStore.State.PasswordInvalid -> {
-                viewModel.passwordShowError.value = true
-                viewModel.isLoginEnabled.value = false
-            }
-            LoginStore.State.UserNameInProgress -> {}
-            LoginStore.State.UserNameInvalid -> {
-                viewModel.userNameShowError.value = true
-                viewModel.passwordShowError.value = false
-                viewModel.isLoginEnabled.value = false
-            }
-        }
         stateFlow.value = state
     }
 
