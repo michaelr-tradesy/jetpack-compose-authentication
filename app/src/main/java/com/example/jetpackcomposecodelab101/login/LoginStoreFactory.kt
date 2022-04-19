@@ -78,10 +78,16 @@ class LoginStoreFactory(
                 password,
                 cipher
             )
+            dispatch(LoginStore.Result.CanLogin)
+            //String(bytes, Charsets.UTF_16)
         }
 
         private fun onBioMetricsChanged(isEnabled: Boolean) {
-            dispatch(LoginStore.Result.PromptForBioMetric)
+            if(isEnabled) {
+                dispatch(LoginStore.Result.PromptForBioMetric)
+            } else {
+                viewModel.bioMetricsPassword.value = null
+            }
         }
 
         private fun onLaunchDashboard(context: Context) {

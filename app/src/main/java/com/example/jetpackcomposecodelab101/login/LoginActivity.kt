@@ -44,7 +44,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.os.CancellationSignal
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.arkivanov.mvikotlin.core.lifecycle.asMviLifecycle
@@ -77,7 +76,8 @@ import kotlinx.coroutines.flow.FlowCollector
 @ExperimentalStateKeeperApi
 class LoginActivity : DefaultAppActivity() {
 
-    private var cancellationSignal: CancellationSignal? = null
+    // region Properties
+
     private lateinit var viewModel: MutableState<DefaultLoginViewModel>
     private lateinit var controller: LoginController
     private lateinit var coroutineScope: CoroutineScope
@@ -105,10 +105,14 @@ class LoginActivity : DefaultAppActivity() {
             }
         }
 
+    // endregion
+
     @ExperimentalStateKeeperApi
     companion object {
         private var stateKeeper: StateKeeper<LoginStore.State>? = null
     }
+
+    // region Override Methods
 
     override fun onDestroy() {
         super.onDestroy()
@@ -124,6 +128,10 @@ class LoginActivity : DefaultAppActivity() {
         CreateMviKotlinController()
         DefaultView()
     }
+
+    // endregion
+
+    // region Private Methods
 
     @Composable
     private fun InitViewModel() {
@@ -216,175 +224,6 @@ class LoginActivity : DefaultAppActivity() {
         }
     }
 
-    private fun onStateReceived(value: LoginStore.State) {
-        println("LoginActivity: New State Received=[$value]")
-        when (value) {
-            LoginStore.State.ApiError -> {}
-            LoginStore.State.CanLogin -> {}
-            LoginStore.State.CanProvidePassword -> {}
-            LoginStore.State.Error -> {}
-            LoginStore.State.FocusOnPassword -> onFocusOnPassword()
-            LoginStore.State.FocusOnUserName -> onFocusOnUserName()
-            LoginStore.State.Idle -> {}
-            LoginStore.State.LoginAttemptInProgress -> {}
-            LoginStore.State.PasswordInProgress -> {}
-            LoginStore.State.PasswordInvalid -> {}
-            LoginStore.State.UserNameInProgress -> {}
-            LoginStore.State.UserNameInvalid -> {}
-            LoginStore.State.AccessToken,
-            LoginStore.State.LaunchDashboard,
-            -> this.launchDashboard()
-            is LoginStore.State.LoginUiState -> onLoginUiState(value)
-            LoginStore.State.PromptForBioMetric -> launchBiometrics()
-        }
-    }
-
-    private fun onLoginUiState(state: LoginStore.State.LoginUiState) {
-        if (state.canShowDashboard) {
-            this.launchDashboard()
-        } else {
-            viewModel.value.apply {
-                isLoginEnabled.value = state.isLoginEnabled
-                isPasswordEnabled.value = state.isPasswordEnabled
-                isUserNameEnabled.value = state.isUserNameEnabled
-                userNameShowError.value = state.userNameShowError
-                passwordShowError.value = state.passwordShowError
-                state.userName?.let { userName.value = it }
-                state.password?.let { password.value = it }
-                if (state.shouldHideKeyboard) {
-                    keyboardController?.hide()
-                }
-            }
-        }
-    }
-
-    private fun onFocusOnPassword() {
-        viewModel.value.apply {
-            focusManager.clearFocus(force = true)
-            passwordFocusRequester.requestFocus()
-        }
-    }
-
-    private fun onFocusOnUserName() {
-        viewModel.value.apply {
-            focusManager.clearFocus(force = true)
-            userNameFocusRequester.requestFocus()
-        }
-    }
-
-    private fun encryptPassword(result: BiometricPrompt.AuthenticationResult) {
-        viewModel.value.apply {
-            if (password.value.isNotEmpty()) {
-                val password = password.value
-                val cipher = result.cryptoObject?.cipher
-                controller.emit(LoginStore.Intent.EncryptPassword(
-                    this@LoginActivity,
-                    password,
-                    cipher
-                ))
-            }
-        }
-    }
-
-    private fun showToastMessage(resourceId: Int, vararg args: String) {
-        showToastMessage(getString(resourceId, args))
-    }
-
-    private fun showToastMessage(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-    }
-
-    private fun isBiometricsSupported(): Boolean {
-        val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
-
-        if (!keyguardManager.isDeviceSecure) {
-            return true
-        } else if (ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.USE_BIOMETRIC) != PackageManager.PERMISSION_GRANTED
-        ) {
-            return false
-        }
-
-        return packageManager.hasSystemFeature(PackageManager.FEATURE_FINGERPRINT)
-    }
-
-    private fun launchBiometrics() {
-        if (isBiometricsSupported()) {
-            val biometricManager = BiometricManager.from(this)
-            val executor = ContextCompat.getMainExecutor(this)
-
-            val biometricPromptInfo = BiometricPrompt.PromptInfo.Builder()
-                .apply {
-                    setTitle(getString(R.string.prompt_info_title))
-                    setSubtitle(getString(R.string.prompt_info_subtitle))
-                    setDescription(getString(R.string.prompt_info_description))
-                    setConfirmationRequired(false)
-                    setAllowedAuthenticators(BIOMETRIC_STRONG)
-                    setNegativeButtonText(getString(R.string.prompt_info_use_app_password))
-                }.build()
-//            biometricPrompt.authenticate(getCancellationSignal())
-            val biometricPrompt = BiometricPrompt(this, executor, authenticationCallback)
-            biometricPrompt.apply {
-                viewModel.value.encryptionObject.let {
-                    authenticate(biometricPromptInfo, it)
-                } ?: run {
-                    authenticate(biometricPromptInfo)
-                }
-            }
-        }
-    }
-
-    private fun isBiometricReady(context: Context) =
-        hasBiometricCapability(context) == BiometricManager.BIOMETRIC_SUCCESS
-
-    private fun hasBiometricCapability(context: Context): Int {
-        val biometricManager = BiometricManager.from(context)
-        return biometricManager.canAuthenticate(BIOMETRIC_STRONG)
-    }
-
-    private fun getCancellationSignal(): CancellationSignal {
-        cancellationSignal = CancellationSignal()
-        cancellationSignal?.setOnCancelListener { showToastMessage(R.string.biometrics_authentication_cancelled) }
-        return cancellationSignal as CancellationSignal
-    }
-
-    @Preview(
-        fontScale = 1f,
-        name = "Light Mode",
-        uiMode = Configuration.UI_MODE_NIGHT_NO,
-        showSystemUi = true,
-        showBackground = true
-    )
-    @Preview(
-        fontScale = 1f,
-        name = "Dark Mode",
-        uiMode = Configuration.UI_MODE_NIGHT_YES,
-        showSystemUi = true,
-        showBackground = true
-    )
-    @Composable
-    fun Preview() {
-        val systemUiController = rememberSystemUiController()
-        val isDarkMode = isSystemInDarkTheme()
-        val appThemeState =
-            remember {
-                mutableStateOf(
-                    DefaultAppThemeState(
-                        isSystemModeEnable = true,
-                        isDarkTheme = isDarkMode,
-                        colorPalette = ColorPalette.Orenji
-                    )
-                )
-            }
-        InitViewModel()
-        JetpackComposeCodeLab101Theme(
-            systemUiController = systemUiController,
-            appThemeState = appThemeState.value,
-        ) {
-            DefaultView()
-        }
-    }
-
     @Composable
     private fun DefaultView() {
         Surface(modifier = Modifier.fillMaxSize()) {
@@ -410,6 +249,8 @@ class LoginActivity : DefaultAppActivity() {
             }
         }
     }
+
+    // region Jetpack Compose UI Components
 
     @Composable
     private fun CreateUserNameField() {
@@ -524,7 +365,7 @@ class LoginActivity : DefaultAppActivity() {
                     checked = isBioMetricsEnabled.value,
                     onCheckedChange = {
                         controller.emit(LoginStore.Intent.BioMetricsChanged.values(
-                            isBioMetricsEnabled.value
+                            !isBioMetricsEnabled.value
                         ))
                     }
                 )
@@ -679,5 +520,174 @@ class LoginActivity : DefaultAppActivity() {
             )
         }
     }
+
+    // endregion
+
+    private fun onStateReceived(value: LoginStore.State) {
+        println("LoginActivity: New State Received=[$value]")
+        when (value) {
+            LoginStore.State.ApiError -> {}
+            LoginStore.State.CanLogin -> {}
+            LoginStore.State.CanProvidePassword -> {}
+            LoginStore.State.Error -> {}
+            LoginStore.State.FocusOnPassword -> onFocusOnPassword()
+            LoginStore.State.FocusOnUserName -> onFocusOnUserName()
+            LoginStore.State.Idle -> {}
+            LoginStore.State.LoginAttemptInProgress -> {}
+            LoginStore.State.PasswordInProgress -> {}
+            LoginStore.State.PasswordInvalid -> {}
+            LoginStore.State.UserNameInProgress -> {}
+            LoginStore.State.UserNameInvalid -> {}
+            LoginStore.State.AccessToken,
+            LoginStore.State.LaunchDashboard,
+            -> this.launchDashboard()
+            is LoginStore.State.LoginUiState -> onLoginUiState(value)
+            LoginStore.State.PromptForBioMetric -> launchBiometrics()
+        }
+    }
+
+    private fun onLoginUiState(state: LoginStore.State.LoginUiState) {
+        if (state.canShowDashboard) {
+            this.launchDashboard()
+        } else {
+            viewModel.value.apply {
+                isLoginEnabled.value = state.isLoginEnabled
+                isPasswordEnabled.value = state.isPasswordEnabled
+                isUserNameEnabled.value = state.isUserNameEnabled
+                userNameShowError.value = state.userNameShowError
+                passwordShowError.value = state.passwordShowError
+                state.userName?.let { userName.value = it }
+                state.password?.let { password.value = it }
+                if (state.shouldHideKeyboard) {
+                    keyboardController?.hide()
+                }
+            }
+        }
+    }
+
+    private fun onFocusOnPassword() {
+        viewModel.value.apply {
+            focusManager.clearFocus(force = true)
+            passwordFocusRequester.requestFocus()
+        }
+    }
+
+    private fun onFocusOnUserName() {
+        viewModel.value.apply {
+            focusManager.clearFocus(force = true)
+            userNameFocusRequester.requestFocus()
+        }
+    }
+
+    private fun encryptPassword(result: BiometricPrompt.AuthenticationResult) {
+        viewModel.value.apply {
+            if (password.value.isNotEmpty()) {
+                val password = password.value
+                val cipher = result.cryptoObject?.cipher
+                controller.emit(LoginStore.Intent.EncryptPassword(
+                    this@LoginActivity,
+                    password,
+                    cipher
+                ))
+            }
+        }
+    }
+
+    private fun showToastMessage(resourceId: Int, vararg args: String) {
+        showToastMessage(getString(resourceId, args))
+    }
+
+    private fun showToastMessage(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun isBiometricsSupported(): Boolean {
+        val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+
+        if (!keyguardManager.isDeviceSecure) {
+            return true
+        } else if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.USE_BIOMETRIC) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return false
+        }
+
+        return packageManager.hasSystemFeature(PackageManager.FEATURE_FINGERPRINT)
+    }
+
+    private fun launchBiometrics() {
+        viewModel.value.keyboardController?.hide()
+        if (isBiometricsSupported()) {
+            val executor = ContextCompat.getMainExecutor(this)
+
+            val biometricPromptInfo = BiometricPrompt.PromptInfo.Builder()
+                .apply {
+                    setTitle(getString(R.string.prompt_info_title))
+                    setSubtitle(getString(R.string.prompt_info_subtitle))
+                    setDescription(getString(R.string.prompt_info_description))
+                    setConfirmationRequired(false)
+                    setAllowedAuthenticators(BIOMETRIC_STRONG)
+                    setNegativeButtonText(getString(R.string.prompt_info_use_app_password))
+                }.build()
+//            biometricPrompt.authenticate(getCancellationSignal())
+            val biometricPrompt = BiometricPrompt(this, executor, authenticationCallback)
+            biometricPrompt.apply {
+                viewModel.value.encryptionObject.let {
+                    authenticate(biometricPromptInfo, it)
+                }
+            }
+        }
+    }
+
+    private fun isBiometricReady(context: Context) =
+        hasBiometricCapability(context) == BiometricManager.BIOMETRIC_SUCCESS
+
+    private fun hasBiometricCapability(context: Context): Int {
+        val biometricManager = BiometricManager.from(context)
+        return biometricManager.canAuthenticate(BIOMETRIC_STRONG)
+    }
+
+    // endregion
+
+    // region Compose Preview
+
+    @Preview(
+        fontScale = 1f,
+        name = "Light Mode",
+        uiMode = Configuration.UI_MODE_NIGHT_NO,
+        showSystemUi = true,
+        showBackground = true
+    )
+    @Preview(
+        fontScale = 1f,
+        name = "Dark Mode",
+        uiMode = Configuration.UI_MODE_NIGHT_YES,
+        showSystemUi = true,
+        showBackground = true
+    )
+    @Composable
+    fun Preview() {
+        val systemUiController = rememberSystemUiController()
+        val isDarkMode = isSystemInDarkTheme()
+        val appThemeState =
+            remember {
+                mutableStateOf(
+                    DefaultAppThemeState(
+                        isSystemModeEnable = true,
+                        isDarkTheme = isDarkMode,
+                        colorPalette = ColorPalette.Orenji
+                    )
+                )
+            }
+        InitViewModel()
+        JetpackComposeCodeLab101Theme(
+            systemUiController = systemUiController,
+            appThemeState = appThemeState.value,
+        ) {
+            DefaultView()
+        }
+    }
+
+    // endregion
 }
 

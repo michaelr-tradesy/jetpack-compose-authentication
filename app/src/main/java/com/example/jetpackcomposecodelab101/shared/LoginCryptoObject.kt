@@ -30,8 +30,8 @@ class DefaultLoginCryptoObject : LoginCryptoObject {
         private const val ENCRYPTION_ALGORITHM = KeyProperties.KEY_ALGORITHM_AES
     }
 
-    override val encryptionObject = BiometricPrompt.CryptoObject(getInitializedCipherForEncryption())
-    override val decryptionObject = BiometricPrompt.CryptoObject(getInitializedCipherForDecryption())
+    override val encryptionObject get() = BiometricPrompt.CryptoObject(getInitializedCipherForEncryption())
+    override val decryptionObject get() = BiometricPrompt.CryptoObject(getInitializedCipherForDecryption())
 
     private fun getInitializedCipherForEncryption(): Cipher {
         val cipher = getCipher()
