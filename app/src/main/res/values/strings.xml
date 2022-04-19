@@ -25,10 +25,10 @@
     <string name="enable_biometrics_prompt">Enable Biometrics Prompt</string>
     <string name="biometrics_authentication_succeeded">Biometrics Authentication Succeeded</string>
     <string name="biometrics_authentication_failed">Biometrics Authentication Failed</string>
-    <string name="biometrics_authentication_error">Biometrics Authentication Error (%s): %s</string>
+    <string name="biometrics_authentication_error">Biometrics Error</string>
     <string name="biometrics_authentication_cancelled">Biometrics Authentication Cancelled</string>
     <string name="prompt_info_title">Biometric Authentication</string>
     <string name="prompt_info_subtitle">Enter biometric credentials to proceed.</string>
     <string name="prompt_info_description">Description</string>
-    <string name="prompt_info_use_app_password">Input your Fingerprint or FaceID to ensure it is you!</string>
+    <string name="prompt_info_use_app_password">Input your Fingerprint or FaceID</string>
 </resources>

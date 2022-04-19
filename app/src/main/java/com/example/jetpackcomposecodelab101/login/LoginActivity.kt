@@ -9,7 +9,6 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
-import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.BiometricPrompt.AuthenticationError
 import androidx.compose.animation.core.animateFloat
@@ -58,6 +57,8 @@ import com.arkivanov.mvikotlin.keepers.statekeeper.getSerializableStateKeeperReg
 import com.example.jetpackcomposecodelab101.R
 import com.example.jetpackcomposecodelab101.base.DefaultAppActivity
 import com.example.jetpackcomposecodelab101.base.launchDashboard
+import com.example.jetpackcomposecodelab101.shared.DefaultLoginCryptoObject
+import com.example.jetpackcomposecodelab101.shared.EncryptedMessage
 import com.example.jetpackcomposecodelab101.ui.DefaultAppThemeState
 import com.example.jetpackcomposecodelab101.ui.theme.ColorPalette
 import com.example.jetpackcomposecodelab101.ui.theme.JetpackComposeCodeLab101Theme
@@ -77,7 +78,6 @@ import kotlinx.coroutines.flow.FlowCollector
 class LoginActivity : DefaultAppActivity() {
 
     private var cancellationSignal: CancellationSignal? = null
-    private var cryptoObject: BiometricPrompt.CryptoObject? = null
     private lateinit var viewModel: MutableState<DefaultLoginViewModel>
     private lateinit var controller: LoginController
     private lateinit var coroutineScope: CoroutineScope
@@ -87,16 +87,16 @@ class LoginActivity : DefaultAppActivity() {
                 @AuthenticationError errorCode: Int, errString: CharSequence,
             ) {
                 super.onAuthenticationError(errorCode, errString)
-                showToastMessage(
-                    R.string.biometrics_authentication_error,
-                    errorCode.toString(),
-                    errString.toString()
-                )
+
+                val message = "${getString(R.string.biometrics_authentication_error)}: " +
+                        "($errorCode) $errString"
+                showToastMessage(message)
             }
 
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                 super.onAuthenticationSucceeded(result)
                 showToastMessage(R.string.biometrics_authentication_succeeded)
+                encryptPassword(result)
             }
 
             override fun onAuthenticationFailed() {
@@ -136,6 +136,7 @@ class LoginActivity : DefaultAppActivity() {
         val userName = rememberSaveable { mutableStateOf("") }
         val userNameFocusRequester = remember { FocusRequester() }
         val password = rememberSaveable { mutableStateOf("") }
+        val bioMetricsPassword : MutableState<EncryptedMessage?> = rememberSaveable { mutableStateOf(null) }
         val isPasswordVisible = remember { mutableStateOf(false) }
         val isPasswordEnabled = remember { mutableStateOf(false) }
         val passwordShowError = remember { mutableStateOf(false) }
@@ -150,6 +151,7 @@ class LoginActivity : DefaultAppActivity() {
                 isPasswordEnabled = isPasswordEnabled,
                 passwordShowError = passwordShowError,
                 password = password,
+                bioMetricsPassword = bioMetricsPassword,
                 passwordFocusRequester = passwordFocusRequester,
                 responseText = responseText,
                 isLoginEnabled = isLoginEnabled,
@@ -160,7 +162,8 @@ class LoginActivity : DefaultAppActivity() {
                 focusManager = focusManager,
                 keyboardController = keyboardController,
                 currentState = currentState,
-                isBioMetricsEnabled = isBioMetricsEnabled
+                isBioMetricsEnabled = isBioMetricsEnabled,
+                loginCrypto = DefaultLoginCryptoObject()
             ))
         }
     }
@@ -229,7 +232,8 @@ class LoginActivity : DefaultAppActivity() {
             LoginStore.State.UserNameInProgress -> {}
             LoginStore.State.UserNameInvalid -> {}
             LoginStore.State.AccessToken,
-            LoginStore.State.LaunchDashboard -> this.launchDashboard()
+            LoginStore.State.LaunchDashboard,
+            -> this.launchDashboard()
             is LoginStore.State.LoginUiState -> onLoginUiState(value)
             LoginStore.State.PromptForBioMetric -> launchBiometrics()
         }
@@ -268,6 +272,20 @@ class LoginActivity : DefaultAppActivity() {
         }
     }
 
+    private fun encryptPassword(result: BiometricPrompt.AuthenticationResult) {
+        viewModel.value.apply {
+            if (password.value.isNotEmpty()) {
+                val password = password.value
+                val cipher = result.cryptoObject?.cipher
+                controller.emit(LoginStore.Intent.EncryptPassword(
+                    this@LoginActivity,
+                    password,
+                    cipher
+                ))
+            }
+        }
+    }
+
     private fun showToastMessage(resourceId: Int, vararg args: String) {
         showToastMessage(getString(resourceId, args))
     }
@@ -301,13 +319,13 @@ class LoginActivity : DefaultAppActivity() {
                     setSubtitle(getString(R.string.prompt_info_subtitle))
                     setDescription(getString(R.string.prompt_info_description))
                     setConfirmationRequired(false)
-                    setAllowedAuthenticators(BIOMETRIC_WEAK)
+                    setAllowedAuthenticators(BIOMETRIC_STRONG)
                     setNegativeButtonText(getString(R.string.prompt_info_use_app_password))
                 }.build()
 //            biometricPrompt.authenticate(getCancellationSignal())
             val biometricPrompt = BiometricPrompt(this, executor, authenticationCallback)
             biometricPrompt.apply {
-                cryptoObject?.let {
+                viewModel.value.encryptionObject.let {
                     authenticate(biometricPromptInfo, it)
                 } ?: run {
                     authenticate(biometricPromptInfo)
@@ -502,7 +520,7 @@ class LoginActivity : DefaultAppActivity() {
                 )
                 Switch(
                     modifier = Modifier.padding(vertical = 24.dp),
-                    enabled = isPasswordEnabled.value,
+                    enabled = isLoginEnabled.value,
                     checked = isBioMetricsEnabled.value,
                     onCheckedChange = {
                         controller.emit(LoginStore.Intent.BioMetricsChanged.values(

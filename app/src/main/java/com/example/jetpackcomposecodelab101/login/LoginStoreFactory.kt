@@ -15,6 +15,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import javax.crypto.Cipher
 
 @ExperimentalComposeUiApi
 @ExperimentalStateKeeperApi
@@ -63,7 +64,20 @@ class LoginStoreFactory(
                     getState()
                 )
                 is LoginStore.Intent.LaunchDashboard -> onLaunchDashboard(intent.context)
+                is LoginStore.Intent.EncryptPassword -> onEncryptPassword(
+                    intent.context,
+                    intent.password,
+                    intent.cipher
+                )
             }
+        }
+
+        private fun onEncryptPassword(context: Context, password: String, cipher: Cipher?) {
+            viewModel.bioMetricsPassword.value = viewModel.encryptPassword(
+                context,
+                password,
+                cipher
+            )
         }
 
         private fun onBioMetricsChanged(isEnabled: Boolean) {

@@ -3,6 +3,7 @@ package com.example.jetpackcomposecodelab101.login
 import android.content.Context
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.utils.JvmSerializable
+import javax.crypto.Cipher
 
 // Following the suggested implementation as specified by arkivanov
 // https://github.com/arkivanov/MVIKotlin/blob/master/mvikotlin/src/commonMain/kotlin/com/arkivanov/mvikotlin/core/store/Store.kt
@@ -26,6 +27,11 @@ interface LoginStore :
                 return this
             }
         }
+        data class EncryptPassword(
+            var context: Context,
+            var password: String,
+            var cipher: Cipher?
+        ) : Intent()
 
         data class LaunchDashboard(var context: Context) : Intent()
         object UserNameProvided : Intent() {
