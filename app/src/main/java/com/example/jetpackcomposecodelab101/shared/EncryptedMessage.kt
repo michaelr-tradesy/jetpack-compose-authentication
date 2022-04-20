@@ -1,7 +1,13 @@
 package com.example.jetpackcomposecodelab101.shared
 
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.Serializable
+
 //initialization vector (IV)
-data class EncryptedMessage(val cipherText: ByteArray?, val iv: ByteArray?) {
+@Serializable
+@Parcelize
+data class EncryptedMessage(val cipherText: ByteArray?, val iv: ByteArray?) : Parcelable {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

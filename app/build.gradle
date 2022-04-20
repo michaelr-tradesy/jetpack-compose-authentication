@@ -2,6 +2,8 @@ plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id 'kotlin-android'
+    id "kotlinx-serialization"
+    id("kotlin-parcelize")
 }
 
 android {
@@ -54,16 +56,24 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.core:core-ktx:1.7.0'
-    implementation "androidx.compose.ui:ui:$compose_version"
-    implementation "androidx.compose.material:material:$compose_version"
-    implementation "androidx.compose.ui:ui-tooling-preview:$compose_version"
-//    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.4.0'
-//    implementation "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.5.0-alpha01"
     implementation 'androidx.activity:activity-compose:1.4.0'
     implementation("androidx.biometric:biometric:1.2.0-alpha04")
     implementation("androidx.biometric:biometric-ktx:1.2.0-alpha04")
+    implementation "androidx.compose.material:material:$compose_version"
     implementation "androidx.compose.material:material-icons-extended:$compose_version"
+    implementation "androidx.compose.ui:ui:$compose_version"
+    implementation "androidx.compose.ui:ui-tooling-preview:$compose_version"
+    implementation("androidx.core:core-ktx:1.7.0")
+    // Typed DataStore (Typed API surface, such as Proto)
+    implementation("androidx.datastore:datastore:1.0.0")
+    // Alternatively - use the following artifact without an Android dependency.
+    implementation("androidx.datastore:datastore-core:1.0.0")
+    // Preferences DataStore (SharedPreferences like APIs)
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+    // Alternatively - use the following artifact without an Android dependency.
+    implementation("androidx.datastore:datastore-preferences-core:1.0.0")
+//    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.4.0'
+//    implementation "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.5.0-alpha01"
     implementation("com.arkivanov.mvikotlin:mvikotlin:$mvi_kotlin_version")
     implementation("com.arkivanov.mvikotlin:mvikotlin-extensions-coroutines:$mvi_kotlin_version")
     implementation("com.arkivanov.mvikotlin:mvikotlin-logging:$mvi_kotlin_version")
@@ -74,6 +84,10 @@ dependencies {
     implementation("com.arkivanov.mvikotlin:rx:$mvi_kotlin_version")
     implementation("com.badoo.reaktive:reaktive:1.1.22")
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.17.0")
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0'
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.6.20")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$serializationVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'

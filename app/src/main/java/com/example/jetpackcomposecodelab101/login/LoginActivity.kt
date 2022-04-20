@@ -7,7 +7,6 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Bundle
 import android.widget.Toast
-import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.BiometricPrompt.AuthenticationError
@@ -44,6 +43,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.arkivanov.mvikotlin.core.lifecycle.asMviLifecycle
@@ -58,15 +61,14 @@ import com.example.jetpackcomposecodelab101.base.DefaultAppActivity
 import com.example.jetpackcomposecodelab101.base.launchDashboard
 import com.example.jetpackcomposecodelab101.shared.DefaultLoginCryptoObject
 import com.example.jetpackcomposecodelab101.shared.EncryptedMessage
+import com.example.jetpackcomposecodelab101.shared.biometrics.BiometricsUtility
+import com.example.jetpackcomposecodelab101.shared.biometrics.DefaultBiometricsUtility
 import com.example.jetpackcomposecodelab101.ui.DefaultAppThemeState
 import com.example.jetpackcomposecodelab101.ui.theme.ColorPalette
 import com.example.jetpackcomposecodelab101.ui.theme.JetpackComposeCodeLab101Theme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.InternalCoroutinesApi
-import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
 
 @ExperimentalComposeUiApi
 @ExperimentalCoroutinesApi
@@ -78,9 +80,14 @@ class LoginActivity : DefaultAppActivity() {
 
     // region Properties
 
+    private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+    private val exampleCounter = intPreferencesKey("example_counter")
+    private val mainScope = MainScope()
+    private lateinit var exampleCounterFlow: Flow<Int>
     private lateinit var viewModel: MutableState<DefaultLoginViewModel>
     private lateinit var controller: LoginController
     private lateinit var coroutineScope: CoroutineScope
+    private lateinit var biometricsUtility: BiometricsUtility
     private val authenticationCallback: BiometricPrompt.AuthenticationCallback =
         object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationError(
@@ -124,6 +131,7 @@ class LoginActivity : DefaultAppActivity() {
 //        val viewModel: LoginViewModel by viewModels { AppViewModelFactory(this) }
 
         InitViewModel()
+        InitBiometricsUtility()
         coroutineScope = rememberCoroutineScope()
         CreateMviKotlinController()
         DefaultView()
@@ -132,6 +140,12 @@ class LoginActivity : DefaultAppActivity() {
     // endregion
 
     // region Private Methods
+
+    @Composable
+    private fun InitBiometricsUtility() {
+        biometricsUtility = DefaultBiometricsUtility()
+    }
+
 
     @Composable
     private fun InitViewModel() {
@@ -193,11 +207,7 @@ class LoginActivity : DefaultAppActivity() {
         )
 
         LaunchedEffect(Unit) {
-            controller.stateFlow.collect(object : FlowCollector<LoginStore.State> {
-                override suspend fun emit(value: LoginStore.State) {
-                    onStateReceived(value)
-                }
-            })
+            controller.stateFlow.collect { value -> onStateReceived(value) }
         }
 
         DisposableEffect(lifecycle) {
@@ -240,7 +250,7 @@ class LoginActivity : DefaultAppActivity() {
                 CreateUserNameField()
                 Divider(color = Color.LightGray)
                 CreatePasswordField()
-                if (isBiometricReady(this@LoginActivity)) {
+                if (biometricsUtility.isBiometricReady(this@LoginActivity)) {
                     CreateBioMetricsField()
                 }
                 CreateLoginButtonField()
@@ -639,14 +649,6 @@ class LoginActivity : DefaultAppActivity() {
         }
     }
 
-    private fun isBiometricReady(context: Context) =
-        hasBiometricCapability(context) == BiometricManager.BIOMETRIC_SUCCESS
-
-    private fun hasBiometricCapability(context: Context): Int {
-        val biometricManager = BiometricManager.from(context)
-        return biometricManager.canAuthenticate(BIOMETRIC_STRONG)
-    }
-
     // endregion
 
     // region Compose Preview
@@ -680,11 +682,21 @@ class LoginActivity : DefaultAppActivity() {
                 )
             }
         InitViewModel()
+        InitMockBiometricsUtility()
         JetpackComposeCodeLab101Theme(
             systemUiController = systemUiController,
             appThemeState = appThemeState.value,
         ) {
             DefaultView()
+        }
+    }
+
+    @Composable
+    private fun InitMockBiometricsUtility() {
+        biometricsUtility = object : BiometricsUtility {
+            override fun isBiometricReady(context: Context): Boolean {
+                return true
+            }
         }
     }
 
