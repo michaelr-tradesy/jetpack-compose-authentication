@@ -56,6 +56,7 @@ import com.arkivanov.mvikotlin.keepers.statekeeper.ExperimentalStateKeeperApi
 import com.arkivanov.mvikotlin.keepers.statekeeper.StateKeeper
 import com.arkivanov.mvikotlin.keepers.statekeeper.get
 import com.arkivanov.mvikotlin.keepers.statekeeper.getSerializableStateKeeperRegistry
+import com.example.jetpackcomposecodelab101.MainApplication
 import com.example.jetpackcomposecodelab101.R
 import com.example.jetpackcomposecodelab101.base.DefaultAppActivity
 import com.example.jetpackcomposecodelab101.base.launchDashboard
@@ -124,6 +125,11 @@ class LoginActivity : DefaultAppActivity() {
     override fun onDestroy() {
         super.onDestroy()
         stateKeeper?.unregister()
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
+        println("onBackPressed()...")
     }
 
     @Composable
@@ -236,6 +242,10 @@ class LoginActivity : DefaultAppActivity() {
 
     @Composable
     private fun DefaultView() {
+        val isBiometricEnabled = (application as MainApplication).isBiometricEnabled
+
+        println("LaunchDarkly: isBiometricEnabled=[$isBiometricEnabled]")
+
         Surface(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier

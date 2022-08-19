@@ -7,12 +7,12 @@ plugins {
 }
 
 android {
-    compileSdk 31
+    compileSdk 33
 
     defaultConfig {
         applicationId "com.example.jetpackcomposecodelab101"
-        minSdk 24
-        targetSdk 31
+        minSdk 26
+        targetSdk 33
         versionCode 1
         versionName "1.0"
 
@@ -84,8 +84,9 @@ dependencies {
     implementation("com.arkivanov.mvikotlin:rx:$mvi_kotlin_version")
     implementation("com.badoo.reaktive:reaktive:1.1.22")
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.17.0")
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0'
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.6.20")
+    implementation("com.launchdarkly:launchdarkly-android-client-sdk:3.1.7")
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.7.10")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$serializationVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
     testImplementation 'junit:junit:4.13.2'
