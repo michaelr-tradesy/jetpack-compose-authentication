@@ -8,6 +8,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.FragmentActivity
 import com.example.jetpackcomposecodelab101.ui.AppThemeState
 import com.example.jetpackcomposecodelab101.ui.DefaultAppThemeState
@@ -27,8 +28,10 @@ abstract class DefaultAppActivity :  FragmentActivity(), AppActivity {
         super.onCreate(savedInstanceState)
 
         ComposeView(this).also {
+            it.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnLifecycleDestroyed(lifecycle))
             setContentView(it)
         }.setContent {
+
             PostSetContent(savedInstanceState)
         }
     }

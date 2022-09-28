@@ -52,8 +52,8 @@ class MainApplication : Application() {
             .disableBackgroundUpdating(false)
             .build()
 
-        val firstName = "Brent"
-        val lastName = "Abel"
+        val firstName = "Miami"
+        val lastName = "Vice"
         val avatar =
             "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTaBJsvhB9uNRXbwnd5kBReTmaGKi9dciJzog&usqp=CAU"
         ldUser = LDUser.Builder("user-$firstName-$lastName")
@@ -103,13 +103,30 @@ class MainApplication : Application() {
         ldClient.trackMetric("New Metric",
             LDValue.buildArray().add("$firstName $lastName").build(),
             1.0)
-        val one = ldClient.boolVariationDetail("isAmerican", Locale.getDefault() == Locale.US)
         val two = ldClient.boolVariationDetail("isBiometricEnabled", false)
-        val three = ldClient.boolVariation("isBiometricEnabled", false)
+        val boolVariationValue = ldClient.boolVariation("boolVariationValue", false)
+        val boolVariationDetail = ldClient.boolVariationDetail("boolVariationDetailValue", false)
+        val doubleVariationValue = ldClient.doubleVariation("doubleVariationValue", 1.0)
+        val doubleVariationDetailValue = ldClient.doubleVariationDetail("doubleVariationDetailValue", 2.0)
+        val intVariationValue = ldClient.intVariation("intVariationValue", 10)
+        val intVariationDetailValue = ldClient.intVariationDetail("intVariationDetailValue", 20)
+        val jsonValueVariationValue = ldClient.jsonValueVariation("jsonValueVariationValue", LDValue.buildArray().add("California").build())
+        val jsonValueVariationDetailValue = ldClient.jsonValueVariationDetail("jsonValueVariationDetailValue", LDValue.buildArray().add("$firstName $lastName").build())
+        val stringVariationValue = ldClient.stringVariation("stringVariationValue", "Milk")
+        val stringVariationDetail = ldClient.stringVariationDetail("stringVariationDetailValue", "Sugar")
 
-        println("LaunchDarkly isAmerican detail=[${one.value}] isDefaultValue=[${one.isDefaultValue}] reason=[${one.reason}]")
         println("LaunchDarkly isBiometricEnabled detail=[${two.value}] isDefaultValue=[${two.isDefaultValue}] reason=[${two.reason}]")
-        println("LaunchDarkly isBiometricEnabled variation=[${three}]")
+
+        println("LaunchDarkly boolVariationValue=[${boolVariationValue}]")
+        println("LaunchDarkly boolVariationDetailValue=[${boolVariationDetail.value}] isDefaultValue=[${boolVariationDetail.isDefaultValue}] reason=[${boolVariationDetail.reason}]")
+        println("LaunchDarkly doubleVariationValue=[${doubleVariationValue}]")
+        println("LaunchDarkly doubleVariationDetailValue=[${doubleVariationDetailValue.value}] isDefaultValue=[${doubleVariationDetailValue.isDefaultValue}] reason=[${doubleVariationDetailValue.reason}]")
+        println("LaunchDarkly intVariationValue=[${intVariationValue}]")
+        println("LaunchDarkly intVariationDetailValue=[${intVariationDetailValue.value}] isDefaultValue=[${intVariationDetailValue.isDefaultValue}] reason=[${intVariationDetailValue.reason}]")
+        println("LaunchDarkly jsonValueVariationValue=[${jsonValueVariationValue}]")
+        println("LaunchDarkly jsonValueVariationDetailValue=[${jsonValueVariationDetailValue.value}] isDefaultValue=[${jsonValueVariationDetailValue.isDefaultValue}] reason=[${jsonValueVariationDetailValue.reason}]")
+        println("LaunchDarkly stringVariationValue=[${stringVariationValue}]")
+        println("LaunchDarkly stringVariationDetailValue=[${stringVariationDetail.value}] isDefaultValue=[${stringVariationDetail.isDefaultValue}] reason=[${stringVariationDetail.reason}]")
     }
 
     val isBiometricEnabled: Boolean
